@@ -31,7 +31,7 @@ This is the most important part of the server. Parsing lives on the server, not 
 1. The extension strips `<script>` and `<style>` from the tab's rendered DOM and POSTs `{url, html}`. Stripping keeps session tokens and tracking IDs out of storage. Scripts of type `application/ld+json` are kept, since that's where the recipe data lives. It works on paywalled and logged-in pages.
 2. If the server returns 413, the extension sends just the URL and the server fetches the page itself. The web UI's "paste a URL" uses the same path.
 3. The server extracts:
-   - **Structured recipe data:** JSON-LD, microdata, OpenGraph. Candidates are `borschtapp/krip` and `kkyr/go-recipe`. We pick one in Phase 0 by running both on real pages.
+   - **Structured recipe data:** JSON-LD, microdata, OpenGraph. Keep `borschtapp/krip` as a benchmark baseline; build and test Cookarr's own extractor against the fixture corpus.
    - **Story text:** a readability port. The maintained one appears to be `codeberg.org/readeck/go-readability/v2` (go-shiori's is reportedly archived). Verify before adopting.
    - **Sanitising:** `bluemonday` on all stored HTML.
 4. The server downloads the photos, with a guard against fetches to private and loopback addresses that re-checks redirects. Each image is re-encoded and resized (which strips EXIF), then stored on disk by content hash. The `image` row keeps its source URL.
@@ -101,6 +101,7 @@ cookarr/
 │   ├── api/              HTTP handlers, middleware, routing
 │   ├── auth/             login, sessions, extension tokens
 │   ├── capture/          JSON-LD/microdata parsing, readability, sanitising
+│   │   └── testdata/     saved recipe pages and source list for parser tests
 │   ├── images/           download, SSRF guard, resize, hash storage
 │   ├── authors/          link extraction and social/support classification
 │   └── store/            store interface plus sqlc-generated code per engine
@@ -111,7 +112,6 @@ cookarr/
 ├── web/                  Svelte + Vite app (src/, dist/), own package.json
 │   └── embed.go          //go:embed all:dist
 ├── extension/            MV3 extension, own package.json
-├── testdata/fixtures/    saved recipe pages for parser tests
 ├── docs/
 ├── magefile.go           build, test, generate, dev tasks
 ├── Dockerfile            Node build stage, Go build stage, final image
