@@ -1,0 +1,22 @@
+docs/ROADMAP.md
+  s_925592c862d59d::t_4a4eaedb4f2e7b 7
+docs/PLAN.md
+  s_925592c862d59d::t_4a4eaedb4f2e7b 34
+  s_925592c862d59d::t_440bd6cc29d8ce 104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19403e89a792df09ae42b6da177c430a4b272450",
+  "prompts": {},
+  "sessions": {
+    "s_925592c862d59d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e7086fb44ffe8P4o8Z895PlP2s",
+        "model": "openai/gpt-6-luna"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
