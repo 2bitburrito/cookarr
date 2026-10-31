@@ -39,17 +39,285 @@ func (Extractor) Extract(pageURL string, page []byte) (*capture.Structured, erro
 			collectRecipes(value, &recipes)
 		}
 	})
+
+	// Prefer the JSON-LD candidate with the most useful recipe content. Pages
+	// can contain several Recipe objects, including incomplete carousel cards.
+	var result *capture.Structured
 	for _, candidate := range recipes {
-		result := fromRecipe(candidate)
-		if hasRecipeData(result) {
-			return result, nil
+		candidateResult := fromRecipe(candidate)
+		if result == nil || recipeScore(candidateResult) > recipeScore(result) {
+			result = candidateResult
 		}
 	}
-	return nil, errors.New("no schema.org Recipe JSON-LD found")
+	if result == nil {
+		result = &capture.Structured{}
+	}
+
+	// If JSON-LD is absent or incomplete, make a second pass over headings and
+	// use matching ingredient/instruction sections to fill missing fields.
+	if len(result.Ingredients) == 0 || len(result.Steps) == 0 {
+		sections := extractHeadingSections(root)
+		if len(result.Ingredients) == 0 {
+			result.Ingredients = sections.ingredients
+		}
+		if len(result.Steps) == 0 {
+			result.Steps = sections.steps
+		}
+	}
+	if hasRecipeData(result) {
+		return result, nil
+	}
+	return nil, errors.New("no recipe data found in JSON-LD or recognized HTML sections")
 }
 
-// collectRecipes recursively finds Recipe objects in JSON-LD arrays and
-// @graph containers. Other objects are traversed only when they contain @graph.
+// recipeScore prefers JSON-LD candidates with ingredients and instructions;
+// title-only objects should not hide a more complete recipe object.
+func recipeScore(r *capture.Structured) int {
+	score := 0
+	if r.Title != "" {
+		score++
+	}
+	if len(r.Ingredients) > 0 {
+		score += 2
+	}
+	if len(r.Steps) > 0 {
+		score += 2
+	}
+	return score
+}
+
+type headingSections struct {
+	ingredients []capture.Ingredient
+	steps       []capture.Step
+}
+
+type textBlock struct {
+	text string
+}
+
+// extractHeadingSections finds h2/h3 headings for ingredients and directions,
+// then reads list items (preferred) or paragraphs up to the next h2/h3.
+func extractHeadingSections(root *html.Node) headingSections {
+	var nodes []*html.Node
+	walk(root, func(n *html.Node) { nodes = append(nodes, n) })
+	var result headingSections
+	for i, n := range nodes {
+		if n.Type != html.ElementNode || !isSectionHeading(n) {
+			continue
+		}
+		kind := classifyHeading(text(n))
+		if kind == "" {
+			continue
+		}
+		end := len(nodes)
+		for j := i + 1; j < len(nodes); j++ {
+			if nodes[j].Type == html.ElementNode && isSectionHeading(nodes[j]) {
+				end = j
+				break
+			}
+		}
+		contentNodes := nodes[i+1 : end]
+		if kind == "steps" && isNumberedStepHeading(text(n)) {
+			if localNodes := followingSiblingNodes(n); len(localNodes) > 0 {
+				contentNodes = localNodes
+			}
+		}
+		for _, block := range sectionBlocks(contentNodes) {
+			switch kind {
+			case "ingredients":
+				appendUniqueIngredient(&result.ingredients, block.text)
+			case "steps":
+				appendUniqueStep(&result.steps, block.text)
+			}
+		}
+	}
+	return result
+}
+
+// isSectionHeading limits the fallback to the h2/h3 section hierarchy, where
+// recipe sections are commonly marked without machine-readable metadata.
+func isSectionHeading(n *html.Node) bool {
+	return n.Data == "h2" || n.Data == "h3"
+}
+
+// classifyHeading maps common recipe section labels to their content type.
+func classifyHeading(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	value = strings.Trim(value, " \t\r\n:.-–—")
+	if strings.HasPrefix(value, "step ") {
+		return "steps"
+	}
+	for _, keyword := range []string{"ingredients", "ingredient", "ingredient list", "what you need", "what you'll need", "what you will need"} {
+		if value == keyword || strings.HasPrefix(value, keyword+" ") || strings.HasPrefix(value, keyword+":") {
+			return "ingredients"
+		}
+	}
+	for _, keyword := range []string{"method", "steps", "directions", "instructions", "preparation", "how to make"} {
+		if value == keyword || strings.HasPrefix(value, keyword+" ") || strings.HasPrefix(value, keyword+":") {
+			return "steps"
+		}
+	}
+	return ""
+}
+
+// isNumberedStepHeading identifies headings such as "Step 1". Their content
+// is limited to the same parent container so unrelated lists after the recipe
+// are not accidentally treated as cooking steps.
+func isNumberedStepHeading(value string) bool {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if !strings.HasPrefix(value, "step ") {
+		return false
+	}
+	return len(value) > len("step ") && value[len("step ")] >= '0' && value[len("step ")] <= '9'
+}
+
+// followingSiblingNodes returns the descendants of siblings after a heading
+// within the same parent, stopping at another h2/h3. Recipe markup commonly
+// wraps each numbered step in its own container with a paragraph after h3.
+func followingSiblingNodes(heading *html.Node) []*html.Node {
+	if heading.Parent == nil {
+		return nil
+	}
+	var nodes []*html.Node
+	for sibling := heading.NextSibling; sibling != nil; sibling = sibling.NextSibling {
+		if sibling.Type == html.ElementNode && isSectionHeading(sibling) {
+			break
+		}
+		walk(sibling, func(n *html.Node) { nodes = append(nodes, n) })
+	}
+	return nodes
+}
+
+// appendUniqueIngredient adds a section-derived ingredient unless the same
+// normalized line was already found in another repeated page section.
+func appendUniqueIngredient(items *[]capture.Ingredient, text string) {
+	key := normalizeBlock(text)
+	for _, item := range *items {
+		if normalizeBlock(item.Text) == key {
+			return
+		}
+	}
+	*items = append(*items, capture.Ingredient{Text: text})
+}
+
+// appendUniqueStep adds a section-derived step unless it duplicates one found
+// in another repeated page section (for example desktop/mobile markup).
+func appendUniqueStep(items *[]capture.Step, text string) {
+	key := normalizeBlock(text)
+	for _, item := range *items {
+		if normalizeBlock(item.Text) == key {
+			return
+		}
+	}
+	*items = append(*items, capture.Step{Text: text})
+}
+
+// normalizeBlock creates a stable comparison key for duplicate extracted text.
+func normalizeBlock(text string) string {
+	return strings.ToLower(strings.Join(strings.Fields(text), " "))
+}
+
+// sectionBlocks selects one text block per list item, falling back to
+// paragraphs when a section is not represented as a list. It avoids counting
+// nested list items twice and removes duplicate/empty text.
+func sectionBlocks(nodes []*html.Node) []textBlock {
+	var listItems, paragraphs, textContainers []textBlock
+	for _, n := range nodes {
+		if n.Type != html.ElementNode {
+			continue
+		}
+		switch n.Data {
+		case "li":
+			if hasAncestorElement(n, "li") {
+				continue
+			}
+			if value := cleanBlockText(n, true); value != "" {
+				listItems = append(listItems, textBlock{text: value})
+			}
+		case "p":
+			if value := cleanBlockText(n, false); value != "" {
+				paragraphs = append(paragraphs, textBlock{text: value})
+			}
+		case "div":
+			if !hasContentBlockDescendant(n) {
+				if value := cleanBlockText(n, false); value != "" {
+					textContainers = append(textContainers, textBlock{text: value})
+				}
+			}
+		}
+	}
+	blocks := listItems
+	if len(blocks) == 0 {
+		blocks = paragraphs
+	}
+	if len(blocks) == 0 {
+		blocks = textContainers
+	}
+	seen := make(map[string]bool, len(blocks))
+	out := blocks[:0]
+	for _, block := range blocks {
+		key := normalizeBlock(block.text)
+		if !seen[key] {
+			seen[key] = true
+			out = append(out, block)
+		}
+	}
+	return out
+}
+
+// hasContentBlockDescendant reports whether a div contains a nested block
+// whose text should be collected separately instead of as one large container.
+func hasContentBlockDescendant(n *html.Node) bool {
+	for child := n.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type != html.ElementNode {
+			continue
+		}
+		switch child.Data {
+		case "div", "p", "li", "ul", "ol", "h2", "h3":
+			return true
+		}
+		if hasContentBlockDescendant(child) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasAncestorElement reports whether n is nested inside an element of tag.
+func hasAncestorElement(n *html.Node, tag string) bool {
+	for parent := n.Parent; parent != nil; parent = parent.Parent {
+		if parent.Type == html.ElementNode && parent.Data == tag {
+			return true
+		}
+	}
+	return false
+}
+
+// cleanBlockText extracts readable text and skips nested lists when collecting
+// a list item, preventing nested items from being repeated in the parent.
+func cleanBlockText(n *html.Node, skipLists bool) string {
+	var b strings.Builder
+	var collect func(*html.Node)
+	collect = func(node *html.Node) {
+		if node.Type == html.ElementNode {
+			if node.Data == "script" || node.Data == "style" || (skipLists && (node.Data == "ul" || node.Data == "ol")) {
+				return
+			}
+		}
+		if node.Type == html.TextNode {
+			b.WriteString(node.Data)
+			b.WriteByte(' ')
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			collect(child)
+		}
+	}
+	collect(n)
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+// collectRecipes recursively finds Recipe objects in SON-LD arrays and
+// "@graph" containers. Other objects are traversed only when they contain @graph.
 func collectRecipes(v any, out *[]map[string]any) {
 	switch x := v.(type) {
 	case []any:

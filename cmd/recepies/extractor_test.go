@@ -1,6 +1,8 @@
 package recepies
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -53,5 +55,66 @@ func TestExtractorRejectsArticleOnlyJSONLD(t *testing.T) {
 	page := []byte(`<script type="application/ld+json">{"@type":"Article","headline":"Not a recipe"}</script>`)
 	if _, err := (Extractor{}).Extract("https://example.test/article", page); err == nil {
 		t.Fatal("expected no-recipe error")
+	}
+}
+
+func TestExtractorUsesHeadingsWhenJSONLDSectionsAreMissing(t *testing.T) {
+	page := []byte(`<!doctype html><html><head>
+	<script type="application/ld+json">{"@type":"Recipe","name":"Tart"}</script>
+	</head><body>
+	<h2>Ingredients</h2><ul><li>1 squash</li><li>2 cloves garlic</li></ul>
+	<h2>Instructions</h2>
+	<div><h3>Step 1</h3><p>Roast the squash.</p></div>
+	<div><h3>Step 2</h3><p>Serve warm.</p></div>
+	</body></html>`)
+
+	recipe, err := (Extractor{}).Extract("https://example.test/tart", page)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if recipe.Title != "Tart" {
+		t.Errorf("JSON-LD title was not preserved: %q", recipe.Title)
+	}
+	if len(recipe.Ingredients) != 2 || recipe.Ingredients[0].Text != "1 squash" {
+		t.Errorf("unexpected fallback ingredients: %+v", recipe.Ingredients)
+	}
+	if len(recipe.Steps) != 2 || recipe.Steps[0].Text != "Roast the squash." || recipe.Steps[1].Text != "Serve warm." {
+		t.Errorf("unexpected fallback steps: %+v", recipe.Steps)
+	}
+}
+
+func TestExtractorUsesHeadingFallbackWithoutJSONLD(t *testing.T) {
+	page := []byte(`<h2>Ingredients</h2><p>300 g flour</p><h2>Method</h2><ol><li>Mix the flour.</li></ol>`)
+	recipe, err := (Extractor{}).Extract("https://example.test/bread", page)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(recipe.Ingredients) != 1 || len(recipe.Steps) != 1 {
+		t.Errorf("expected heading fallback to find both sections; got %+v", recipe)
+	}
+}
+
+func TestHeadingFallbackHandlesNigellaAndSaveurFixtures(t *testing.T) {
+	fixtures := []struct {
+		name string
+		url  string
+	}{
+		{"nigella", "https://www.nigella.com/recipes/coffee-shortbreads"},
+		{"saveur", "https://www.saveur.com/article/recipes/seasonal-squash-tart/"},
+	}
+	for _, fixture := range fixtures {
+		t.Run(fixture.name, func(t *testing.T) {
+			page, err := os.ReadFile(filepath.Join("../../internal/capture/testdata/fixtures", fixture.name+".html"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			recipe, err := (Extractor{}).Extract(fixture.url, page)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(recipe.Ingredients) == 0 || len(recipe.Steps) == 0 {
+				t.Fatalf("heading fallback did not find both sections: ingredients=%d steps=%d", len(recipe.Ingredients), len(recipe.Steps))
+			}
+		})
 	}
 }
