@@ -1,0 +1,229 @@
+/* Theme tokens, Rosé Pine: dark by default, [data-theme='light'] overrides.
+   See docs/PLAN.md "Look and feel". */
+:root {
+  /* Rosé Pine (main) */
+  --bg: #191724;
+  --surface: #1f1d2e;
+  --surface-2: #26233a;
+  --border: #403d52;
+  --text: #e0def4;
+  --text-dim: #908caa;
+  --accent: #ebbcba;
+  --accent-2: #f6c177;
+  --on-accent: #191724;
+  --link: var(--accent);
+  --danger: #eb6f92;
+  --success: #9ccfd8;
+  --radius: 14px;
+  --radius-sm: 10px;
+
+  --sans: 'Nunito', 'Quicksand', ui-rounded, system-ui, 'Segoe UI', sans-serif;
+  --heading: var(--sans);
+
+  font: 15px/1.5 var(--sans);
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme='light'] {
+  /* Rosé Pine Dawn */
+  --bg: #faf4ed;
+  --surface: #fffaf3;
+  --surface-2: #f2e9e1;
+  --border: #dfdad9;
+  --text: #575279;
+  --text-dim: #797593;
+  --accent: #d7827e;
+  --accent-2: #ea9d34;
+  --on-accent: #191724;
+  --link: #b4637a;
+  --danger: #b4637a;
+  --success: #56949f;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+a {
+  color: var(--link);
+}
+
+button,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.25rem 0.9rem;
+  cursor: pointer;
+}
+
+button:hover,
+select:hover {
+  border-color: var(--accent);
+}
+
+/* ---- panel content ---- */
+.panel-host {
+  height: 100%;
+  overflow: auto;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.panel {
+  padding: 1rem;
+}
+
+h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+/* ---- dockview, "soft tile" skin ----
+   `dockview-spaced` provides rounded groups, pill-ish tabs and gaps. The
+   variables below swap its colours for the theme tokens. */
+.dock {
+  --dv-group-view-background-color: var(--bg);
+  --dv-tabs-and-actions-container-background-color: var(--surface);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--accent);
+  --dv-activegroup-visiblepanel-tab-color: var(--on-accent);
+  --dv-activegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-activegroup-hiddenpanel-tab-color: var(--text-dim);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--surface-2);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--text);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--text-dim);
+  --dv-tab-divider-color: transparent;
+  --dv-scrollbar-background-color: color-mix(in srgb, var(--text) 22%, transparent);
+  --dv-tabs-container-scrollbar-color: color-mix(in srgb, var(--text) 22%, transparent);
+  --dv-separator-border: transparent;
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--accent);
+  --dv-icon-hover-background-color: var(--surface-2);
+  --dv-drag-over-background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  --dv-drag-over-border-color: var(--accent);
+  --dv-floating-group-border: 1px solid var(--accent);
+  --dv-floating-titlebar-background-color: var(--surface-2);
+  --dv-floating-box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --dv-border-radius: var(--radius);
+  --dv-tab-border-radius: 999px;
+  --dv-tab-font-size: 13px;
+  --dv-tab-margin-block: 0.45rem;
+  --dv-tab-margin-inline: 0.2rem;
+  --dv-tabs-and-actions-container-height: 42px;
+  --dv-spacing-padding: 8px;
+  font-family: var(--sans);
+  background: var(--bg);
+}
+
+.dock .dv-groupview {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.dock .dv-groupview.dv-active-group {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  box-shadow: inset 0 0 22px color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+.dock .dv-tab {
+  font-weight: 700;
+}
+
+.dock .dv-groupview .dv-content-container {
+  background: var(--surface);
+}
+
+/* ---- custom tab: title, float toggle, close ---- */
+.cookarr-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 0 0.7rem;
+}
+
+.tab-btn {
+  display: grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+}
+
+.tab-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  border: 0;
+}
+
+/* ---- scrollbars: a thin line, no arrows or track ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text) 22%, transparent) transparent;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text) 22%, transparent);
+    border-radius: 999px;
+    border: 4px solid transparent;
+    background-clip: padding-box;
+    min-height: 40px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+    background-clip: padding-box;
+  }
+}
