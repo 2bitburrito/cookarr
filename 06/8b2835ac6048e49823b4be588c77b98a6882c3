@@ -1,0 +1,70 @@
+web/src/lib/panels/Steps.svelte
+  s_8fe28491aff5d9::t_36de7c1d161f1c 1-41
+web/src/lib/panels/Author.svelte
+  s_8fe28491aff5d9::t_21995abaefc953 1-47,50-51
+  s_8fe28491aff5d9::t_476d3bfed3982c 48-49
+web/src/lib/fixture.ts
+  s_8fe28491aff5d9::t_640d4fa7c8290d 1-49
+web/src/lib/presets.ts
+  s_8fe28491aff5d9::t_ff942eee5e2410 2-43
+  s_8fe28491aff5d9::t_be7a8eb7ab5d08 1
+web/src/app.css
+  s_8fe28491aff5d9::t_4fc754df2a91b9 17-26,44-66,70-120,123-130,132-150,153-160
+  s_8fe28491aff5d9::t_19e5342c1cec24 151-152,161-188
+  s_8fe28491aff5d9::t_4f4005fb09dd21 14,67
+  s_8fe28491aff5d9::t_4464062fb79598 1,4-13,15-16,31-43
+  s_8fe28491aff5d9::t_6b5eb3988c14c4 2,30,131
+  s_8fe28491aff5d9::t_794279542acd67 28,68,121-122,189-229
+  s_8fe28491aff5d9::t_e1b35145399442 3,27,29,69
+web/src/dockview.d.ts
+  s_8fe28491aff5d9::t_be7a8eb7ab5d08 1-4
+web/package.json
+  s_8fe28491aff5d9::t_b49d8f2e649075 11,20-22
+  s_8fe28491aff5d9::t_e984b45b0806e7 1-10,12-19,23-24
+web/src/lib/panels/Ingredients.svelte
+  s_8fe28491aff5d9::t_7c84ff1f55bc20 1-57
+web/src/lib/panels/Photos.svelte
+  s_8fe28491aff5d9::t_edf8844a769ce8 1-51
+.gitignore
+  s_8fe28491aff5d9::t_6d862d47c765f1 1-2
+  s_8fe28491aff5d9::t_9a8680e27f926c 3-5
+web/src/lib/types.ts
+  s_8fe28491aff5d9::t_32dcfde758e206 1-54
+web/src/lib/panels/Story.svelte
+  s_8fe28491aff5d9::t_42eedea729000b 1-44
+web/src/lib/theme.ts
+  s_8fe28491aff5d9::t_44279b3614951a 1-2,4-5,10,18,21-22
+  s_8fe28491aff5d9::t_6b5eb3988c14c4 3,6-9,11-17,19-20,23
+web/src/lib/tab.ts
+  s_8fe28491aff5d9::t_d82866232921e1 1-69
+web/src/App.svelte
+  s_8fe28491aff5d9::t_2709589b6cf88f 1-6
+web/src/lib/Illustration.svelte
+  s_8fe28491aff5d9::t_4464062fb79598 62,72
+  s_8fe28491aff5d9::t_cbaa3a75f25391 1-4
+  s_8fe28491aff5d9::t_731bb1582ecefe 5-61,63-71,73-79
+web/src/lib/Workspace.svelte
+  s_8fe28491aff5d9::t_6b5eb3988c14c4 12,126
+  s_8fe28491aff5d9::t_19e5342c1cec24 10,95,138
+  s_8fe28491aff5d9::t_03ea76d0e1b538 1,3-9,11,13-93,96-125,127-137,139-199
+  s_8fe28491aff5d9::t_be7a8eb7ab5d08 2
+  s_8fe28491aff5d9::t_5be1dc7ab86160 94
+web/package-lock.json
+  s_8fe28491aff5d9::t_95f50e1e9e3a6c 1-1246
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "068b2835ac6048e49823b4be588c77b98a6882c3",
+  "prompts": {},
+  "sessions": {
+    "s_8fe28491aff5d9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e6e315fefffeoh3zE90sfLdExX",
+        "model": "anthropic/claude-sonnet-5-5"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
