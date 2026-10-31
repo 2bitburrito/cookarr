@@ -1,0 +1,23 @@
+magefile.go
+  s_925592c862d59d::t_1ccbb86f013c41 11
+  s_925592c862d59d::t_06200659f7ac39 16,19-23
+  s_925592c862d59d::t_1025910c6ae17b 17
+scripts/fetch-fixtures.sh
+  s_925592c862d59d::t_1ccbb86f013c41 5-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5593e285dcddf384b967d626cf440706b850fce0",
+  "prompts": {},
+  "sessions": {
+    "s_925592c862d59d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e7086fb44ffe8P4o8Z895PlP2s",
+        "model": "openai/gpt-6-luna"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
