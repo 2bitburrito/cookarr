@@ -1,0 +1,49 @@
+internal/capture/jsonld_extractor_test.go
+  s_925592c862d59d::t_2e754a13a3b7b7 107
+  s_49b137994ab3a6::t_1c9aef83272cca 121-249
+  s_925592c862d59d::t_a5998dd8c1a6d4 1
+  s_49b137994ab3a6::t_bdf164538e10cb 250-268
+  s_925592c862d59d::t_615aaa2c4b2bf7 27,56,71,88,111
+internal/capture/capture_bench_test.go
+  s_925592c862d59d::t_d5d13dbe7f0286 132,140,235
+internal/capture/structured.go
+  s_49b137994ab3a6::t_c710a83457d022 15-21,44-47
+  s_925592c862d59d::t_271a8de06477bb 58-59
+internal/capture/recipe.go
+  s_49b137994ab3a6::t_c710a83457d022 28-30
+internal/capture/e2e_test.go
+  s_49b137994ab3a6::t_c710a83457d022 42,110-112
+  s_49b137994ab3a6::t_bdf164538e10cb 45,53,59,66,72,80
+  s_49b137994ab3a6::t_1c9aef83272cca 1-41,43-44,46-52,54-58,60-65,67-71,73-79,81-109,113-201
+internal/capture/capture.go
+  s_49b137994ab3a6::t_c710a83457d022 102
+internal/capture/jsonld_extractor.go
+  s_925592c862d59d::t_e1118a0813f277 1,18,20-21,26,60,63,65,67,576-577
+  s_49b137994ab3a6::t_c710a83457d022 53-54,61-62,64,66,68-75
+  s_925592c862d59d::t_ff949d8db26863 44,52,86,101-102,204,211,216,223,376-377,388,401-402,408,428,441-442,448,596
+  s_49b137994ab3a6::t_a2a34a0ecdc617 8,11,387,407,424-426,490,506-529,533,538-556,561-575
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "974e6077021a121dd4a65323a8f04b475478cfd3",
+  "prompts": {},
+  "sessions": {
+    "s_49b137994ab3a6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e6e5429d5ffeYpTjjtf0FcMSGi",
+        "model": "anthropic/claude-sonnet-5-5"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    },
+    "s_925592c862d59d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e7086fb44ffe8P4o8Z895PlP2s",
+        "model": "openai/gpt-6-luna"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
