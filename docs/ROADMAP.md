@@ -4,7 +4,7 @@ Each phase ends with something runnable.
 
 ## Phase 0: Spikes
 
-- [ ] **Parser corpus:** save about 30 real recipe pages as fixtures (big sites, small blogs, ad-heavy pages, a few with no JSON-LD). Keep `krip` as a baseline and measure the in-house extractor against it.
+- [x] **Parser corpus:** save about 30 real recipe pages as fixtures (big sites, small blogs, ad-heavy pages, a few with no JSON-LD). Keep `krip` as a baseline and measure the in-house extractor against it.
 - [ ] **Story extraction:** run readability on the same fixtures and confirm the maintained fork.
 - [ ] **Dockview in Svelte:** gaps, coloured active border, pill tabs, floating groups, popout, JSON save and restore, and deeply nested splits (issue #613).
 - [ ] **Capture:** minimal extension that POSTs stripped `{url, html}` to a stub, including the 413 to URL-only fallback.

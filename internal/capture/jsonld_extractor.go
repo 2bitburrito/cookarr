@@ -1,30 +1,29 @@
-// Package recepies contains Cookarr's in-progress recipe structured-data
-// extractor. It is intentionally small and explicit.
-package recepies
+package capture
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
-	"github.com/hpalmer/cookarr/internal/capture"
 	"golang.org/x/net/html"
 )
 
 // Extractor reads Recipe objects from JSON-LD script elements.
 // Microdata and HTML fallbacks can be added here as separately tested stages.
-type Extractor struct{}
+type CookarrExtractor struct{}
 
-// Name identifies this extractor in benchmark output and stored metadata.
-func (Extractor) Name() string { return "cookarr" }
+// Name identifies this extractor in stored metadata.
+func (CookarrExtractor) Name() string { return "cookarr" }
 
 // Extract parses the HTML and returns the first usable schema.org Recipe
 // object found in application/ld+json scripts. Malformed JSON-LD blocks are
 // ignored so one bad block does not prevent parsing other blocks on the page.
-func (Extractor) Extract(pageURL string, page []byte) (*capture.Structured, error) {
+func (CookarrExtractor) Extract(pageURL string, page []byte) (*Structured, error) {
 	root, err := html.Parse(bytes.NewReader(page))
 	if err != nil {
 		return nil, fmt.Errorf("parse html: %w", err)
@@ -42,7 +41,7 @@ func (Extractor) Extract(pageURL string, page []byte) (*capture.Structured, erro
 
 	// Prefer the JSON-LD candidate with the most useful recipe content. Pages
 	// can contain several Recipe objects, including incomplete carousel cards.
-	var result *capture.Structured
+	var result *Structured
 	for _, candidate := range recipes {
 		candidateResult := fromRecipe(candidate)
 		if result == nil || recipeScore(candidateResult) > recipeScore(result) {
@@ -50,18 +49,30 @@ func (Extractor) Extract(pageURL string, page []byte) (*capture.Structured, erro
 		}
 	}
 	if result == nil {
-		result = &capture.Structured{}
+		result = &Structured{}
+	} else {
+		result.Source = SourceJSONLD
 	}
 
 	// If JSON-LD is absent or incomplete, make a second pass over headings and
 	// use matching ingredient/instruction sections to fill missing fields.
 	if len(result.Ingredients) == 0 || len(result.Steps) == 0 {
-		sections := extractHeadingSections(root)
-		if len(result.Ingredients) == 0 {
-			result.Ingredients = sections.ingredients
+		parsedSections := extractHeadingSections(root)
+		filled := false
+		if len(result.Ingredients) == 0 && len(parsedSections.ingredients) > 0 {
+			result.Ingredients = parsedSections.ingredients
+			filled = true
 		}
-		if len(result.Steps) == 0 {
-			result.Steps = sections.steps
+		if len(result.Steps) == 0 && len(parsedSections.steps) > 0 {
+			result.Steps = parsedSections.steps
+			filled = true
+		}
+		if filled {
+			if result.Source == SourceJSONLD {
+				result.Source = SourceJSONLDHeadings
+			} else {
+				result.Source = SourceHeadings
+			}
 		}
 	}
 	if hasRecipeData(result) {
@@ -72,7 +83,7 @@ func (Extractor) Extract(pageURL string, page []byte) (*capture.Structured, erro
 
 // recipeScore prefers JSON-LD candidates with ingredients and instructions;
 // title-only objects should not hide a more complete recipe object.
-func recipeScore(r *capture.Structured) int {
+func recipeScore(r *Structured) int {
 	score := 0
 	if r.Title != "" {
 		score++
@@ -87,8 +98,8 @@ func recipeScore(r *capture.Structured) int {
 }
 
 type headingSections struct {
-	ingredients []capture.Ingredient
-	steps       []capture.Step
+	ingredients []Ingredient
+	steps       []Step
 }
 
 type textBlock struct {
@@ -190,26 +201,26 @@ func followingSiblingNodes(heading *html.Node) []*html.Node {
 
 // appendUniqueIngredient adds a section-derived ingredient unless the same
 // normalized line was already found in another repeated page section.
-func appendUniqueIngredient(items *[]capture.Ingredient, text string) {
+func appendUniqueIngredient(items *[]Ingredient, text string) {
 	key := normalizeBlock(text)
 	for _, item := range *items {
 		if normalizeBlock(item.Text) == key {
 			return
 		}
 	}
-	*items = append(*items, capture.Ingredient{Text: text})
+	*items = append(*items, Ingredient{Text: text})
 }
 
 // appendUniqueStep adds a section-derived step unless it duplicates one found
 // in another repeated page section (for example desktop/mobile markup).
-func appendUniqueStep(items *[]capture.Step, text string) {
+func appendUniqueStep(items *[]Step, text string) {
 	key := normalizeBlock(text)
 	for _, item := range *items {
 		if normalizeBlock(item.Text) == key {
 			return
 		}
 	}
-	*items = append(*items, capture.Step{Text: text})
+	*items = append(*items, Step{Text: text})
 }
 
 // normalizeBlock creates a stable comparison key for duplicate extracted text.
@@ -362,8 +373,8 @@ func typeName(s string) string {
 
 // fromRecipe maps schema.org Recipe properties into Cookarr's structured
 // representation. Each property is handled by a helper for its allowed shapes.
-func fromRecipe(m map[string]any) *capture.Structured {
-	r := &capture.Structured{
+func fromRecipe(m map[string]any) *Structured {
+	r := &Structured{
 		Title:       stringValue(m["name"]),
 		Description: stringValue(m["description"]),
 		Yield:       stringValue(m["recipeYield"]),
@@ -373,8 +384,8 @@ func fromRecipe(m map[string]any) *capture.Structured {
 		TotalTime:   parseDuration(stringValue(m["totalTime"])),
 		Keywords:    stringList(m["keywords"]),
 	}
-	for _, ingredient := range stringList(m["recipeIngredient"]) {
-		r.Ingredients = append(r.Ingredients, capture.Ingredient{Text: ingredient})
+	for _, ingredient := range plainStrings(m["recipeIngredient"]) {
+		r.Ingredients = append(r.Ingredients, Ingredient{Text: ingredient})
 	}
 	r.Steps = parseInstructions(m["recipeInstructions"])
 	r.Images = parseImages(m["image"])
@@ -387,14 +398,14 @@ func fromRecipe(m map[string]any) *capture.Structured {
 // parseInstructions flattens Recipe instructions into steps while preserving
 // HowToSection names as each step's group. It accepts text, HowToStep objects,
 // arrays, and nested HowToSection objects.
-func parseInstructions(v any) []capture.Step {
-	var result []capture.Step
+func parseInstructions(v any) []Step {
+	var result []Step
 	var walkInstruction func(any, string)
 	walkInstruction = func(value any, group string) {
 		switch x := value.(type) {
 		case string:
-			if s := strings.TrimSpace(x); s != "" {
-				result = append(result, capture.Step{Group: group, Text: s})
+			if s := cleanText(x); s != "" {
+				result = append(result, Step{Group: group, Text: s})
 			}
 		case []any:
 			for _, item := range x {
@@ -410,9 +421,11 @@ func parseInstructions(v any) []capture.Step {
 				walkInstruction(x["itemListElement"], section)
 				return
 			}
-			text := first(name, stringValue(x["text"]))
+			// HowToStep.name is often a short label ("Mix") while text holds
+			// the actual instruction, so text wins.
+			text := first(stringValue(x["text"]), name)
 			if text != "" {
-				result = append(result, capture.Step{Group: group, Text: text})
+				result = append(result, Step{Group: group, Text: text})
 			}
 			if text == "" {
 				walkInstruction(x["itemListElement"], group)
@@ -425,14 +438,14 @@ func parseInstructions(v any) []capture.Step {
 
 // parseImages accepts the common JSON-LD image forms: a URL string, an array
 // of image values, or an ImageObject containing url/contentUrl.
-func parseImages(v any) []capture.Photo {
-	var out []capture.Photo
+func parseImages(v any) []Photo {
+	var out []Photo
 	var add func(any)
 	add = func(value any) {
 		switch x := value.(type) {
 		case string:
 			if strings.TrimSpace(x) != "" {
-				out = append(out, capture.Photo{URL: strings.TrimSpace(x)})
+				out = append(out, Photo{URL: strings.TrimSpace(x)})
 			}
 		case []any:
 			for _, item := range x {
@@ -474,7 +487,7 @@ func stringList(v any) []string {
 	switch x := v.(type) {
 	case string:
 		for _, part := range strings.Split(x, ",") {
-			if s := strings.TrimSpace(part); s != "" {
+			if s := cleanText(part); s != "" {
 				result = append(result, s)
 			}
 		}
@@ -490,18 +503,76 @@ func stringList(v any) []string {
 	return result
 }
 
-// stringValue converts JSON values used for scalar recipe fields to trimmed
-// strings; unsupported object shapes return an empty string.
+// plainStrings normalizes a string or list of strings without splitting on
+// commas, for values such as ingredients where a comma is part of the text.
+func plainStrings(v any) []string {
+	var result []string
+	switch x := v.(type) {
+	case string:
+		if s := cleanText(x); s != "" {
+			result = append(result, s)
+		}
+	case []any:
+		for _, item := range x {
+			result = append(result, plainStrings(item)...)
+		}
+	case map[string]any:
+		if s := stringValue(x["name"]); s != "" {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+// stringValue converts JSON values used for scalar recipe fields to cleaned
+// strings. Arrays yield their most descriptive entry and objects their name;
+// unsupported shapes return an empty string.
 func stringValue(v any) string {
 	switch x := v.(type) {
 	case string:
-		return strings.TrimSpace(x)
+		return cleanText(x)
 	case json.Number:
 		return x.String()
 	case float64:
 		return fmt.Sprint(x)
+	case []any:
+		// recipeYield is commonly ["4", "4 servings"]; prefer the entry
+		// with words in it over a bare number.
+		var firstValue string
+		for _, item := range x {
+			s := stringValue(item)
+			if s == "" {
+				continue
+			}
+			if strings.IndexFunc(s, unicode.IsLetter) >= 0 {
+				return s
+			}
+			if firstValue == "" {
+				firstValue = s
+			}
+		}
+		return firstValue
+	case map[string]any:
+		return first(stringValue(x["name"]), stringValue(x["alternateName"]))
 	}
 	return ""
+}
+
+var htmlTag = regexp.MustCompile(`</?[a-zA-Z][^>]*>`)
+var htmlBreak = regexp.MustCompile(`(?i)<br\s*/?>|</p>|</li>|</div>`)
+
+// cleanText decodes HTML entities, strips markup and collapses whitespace.
+// JSON-LD strings frequently carry escaped entities (&amp;, &#39;) and
+// sometimes whole tags such as <p> or <br>.
+func cleanText(s string) string {
+	if strings.ContainsRune(s, '&') {
+		s = html.UnescapeString(s)
+	}
+	if strings.ContainsRune(s, '<') {
+		s = htmlBreak.ReplaceAllString(s, " ")
+		s = htmlTag.ReplaceAllString(s, "")
+	}
+	return strings.Join(strings.Fields(s), " ")
 }
 
 // typeHas checks whether a JSON-LD @type value (string or array) includes the
@@ -522,7 +593,7 @@ func typeHas(v any, target string) bool {
 
 // hasRecipeData reports whether a candidate has enough identifying recipe
 // content to be useful; an empty Recipe object is ignored.
-func hasRecipeData(r *capture.Structured) bool {
+func hasRecipeData(r *Structured) bool {
 	return r.Title != "" || len(r.Ingredients) > 0 || len(r.Steps) > 0
 }
 
@@ -604,16 +675,6 @@ func text(n *html.Node) string {
 	}
 	walkText(n)
 	return b.String()
-}
-
-// attr returns the value of an HTML attribute, or an empty string if absent.
-func attr(n *html.Node, key string) string {
-	for _, a := range n.Attr {
-		if a.Key == key {
-			return a.Val
-		}
-	}
-	return ""
 }
 
 // first returns the first non-empty, trimmed string from values.

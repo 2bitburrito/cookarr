@@ -99,6 +99,7 @@ func applyStructured(rec *Recipe, st *Structured, base *url.URL) {
 	rec.Ingredients = st.Ingredients
 	rec.Steps = st.Steps
 	rec.SiteName = st.PublisherName
+	rec.Source = st.Source
 
 	for i, img := range st.Images {
 		role := PhotoStep

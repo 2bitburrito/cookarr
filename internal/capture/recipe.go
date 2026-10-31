@@ -25,6 +25,9 @@ type Recipe struct {
 
 	// Extractor records which extractor produced the structured fields.
 	Extractor string `json:"extractor"`
+	// Source records whether the structured fields came from JSON-LD, the
+	// heading fallback, or both.
+	Source string `json:"source,omitempty"`
 	// Warnings are non-fatal problems, e.g. a section that came back empty.
 	Warnings []string `json:"warnings,omitempty"`
 }
