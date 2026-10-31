@@ -1,0 +1,27 @@
+scripts/fetch-fixtures.sh
+  s_7c643562fc4441::t_290c6c61fb8698 1-27
+magefile.go
+  s_7c643562fc4441::t_3496d696e8fa6b 8
+  s_7c643562fc4441::t_14e1ba01148b3e 17-20
+  s_7c643562fc4441::t_7a5abd5f011cc3 12
+  s_7c643562fc4441::t_ef62df4f503d6d 7,11,25-27
+  s_7c643562fc4441::t_3929b61ddc373e 13-16,21-24,28
+  s_7c643562fc4441::t_154e78efb96569 4-6
+  s_7c643562fc4441::t_c9b828cd06bf3f 9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c8d3d8ca088fb46a5ee7dbd34b043c7592efd48f",
+  "prompts": {},
+  "sessions": {
+    "s_7c643562fc4441": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e70237c2dffe0JAME25d8DK9ej",
+        "model": "anthropic/claude-sonnet-5-5"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
