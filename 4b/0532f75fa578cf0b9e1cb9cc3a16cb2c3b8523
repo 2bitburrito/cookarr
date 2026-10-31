@@ -1,0 +1,27 @@
+cmd/recepies/extractor_test.go
+  s_925592c862d59d::t_cf7efa5bd56af7 4-5,94-118
+  s_925592c862d59d::t_9215b12b027169 60-93,119-120
+cmd/recepies/extractor.go
+  s_925592c862d59d::t_aa93ea35258ff6 119-125,161-188
+  s_925592c862d59d::t_c41076c3fde1b1 224,241-246,252-254,266-283
+  s_925592c862d59d::t_11a913b2c7cc3d 147-149,155
+  s_925592c862d59d::t_e48dc3998c0490 128,130,150,191-219,259
+  s_925592c862d59d::t_2c44c6b670f287 43-45,47-118,126-127,129,131-146,151-154,156-160,189-190,220-223,225-240,247-251,255-258,260-265,284-312,315-316
+  s_925592c862d59d::t_356ce35ec3641f 42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4b0532f75fa578cf0b9e1cb9cc3a16cb2c3b8523",
+  "prompts": {},
+  "sessions": {
+    "s_925592c862d59d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e7086fb44ffe8P4o8Z895PlP2s",
+        "model": "openai/gpt-6-luna"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
