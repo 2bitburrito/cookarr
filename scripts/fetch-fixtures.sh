@@ -2,8 +2,8 @@
 # Usage: scripts/fetch-fixtures.sh [sources.tsv] [outdir]
 # Downloads each "slug<TAB>url" line as raw HTML. Skips files that already exist.
 set -u
-src="${1:-testdata/sources.tsv}"
-out="${2:-testdata/fixtures}"
+src="${1:-internal/capture/testdata/sources.tsv}"
+out="${2:-internal/capture/testdata/fixtures}"
 ua='Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0'
 mkdir -p "$out"
 fetch() {
