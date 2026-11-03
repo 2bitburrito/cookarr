@@ -1,0 +1,25 @@
+internal/capture/testdata/golden/nigella.story.html
+  s_f7d5c21fdf3530::t_11d6d8865a45ef 1-233
+internal/capture/testdata/golden/pinchofyum.story.html
+  s_f7d5c21fdf3530::t_11d6d8865a45ef 1-228
+internal/capture/testdata/golden/seriouseats.story.html
+  s_f7d5c21fdf3530::t_11d6d8865a45ef 1-21
+internal/capture/story_golden_test.go
+  s_f7d5c21fdf3530::t_f75a03533bcdfc 1-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6d458998ff777767847b5b6beeedc858f198116e",
+  "prompts": {},
+  "sessions": {
+    "s_f7d5c21fdf3530": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e5f0b9440ffeEz9J0bVLTq0xaN",
+        "model": "anthropic/claude-sonnet-5-5"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
