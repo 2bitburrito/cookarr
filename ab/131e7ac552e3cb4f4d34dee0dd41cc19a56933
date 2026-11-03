@@ -1,0 +1,40 @@
+internal/capture/jsonld_extractor.go
+  s_7d4c37f64e9ad8::t_741407cf46c3ee 23-24,33,42,44-49,51-53
+  s_7d4c37f64e9ad8::t_9e95f890ce1265 50,54,84,87
+  s_7d4c37f64e9ad8::t_c11c63bb76b513 25-26
+  s_7d4c37f64e9ad8::t_277ec880f703bb 70,73-74,77-83,85-86,91-95,97-99,101-108
+  s_7d4c37f64e9ad8::t_af537ac112177e 32,34-41,43
+  s_7d4c37f64e9ad8::t_231fe774223641 27
+internal/capture/capture_bench_test.go
+  s_53443bd74a762e::t_b8b5306491df6f 132,140,235
+internal/capture/e2e_test.go
+  s_53443bd74a762e::t_8081d1b61001a9 22,152,194
+internal/capture/jsonld_extractor_test.go
+  s_53443bd74a762e::t_08eeb0ff707bca 27,56,71,88,111,125,259
+internal/capture/structured.go
+  s_53443bd74a762e::t_05ef5e7d642537 59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ab131e7ac552e3cb4f4d34dee0dd41cc19a56933",
+  "prompts": {},
+  "sessions": {
+    "s_53443bd74a762e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "372bbdd6-c9b1-4390-aacc-0462a0ca3d1f",
+        "model": "unknown"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    },
+    "s_7d4c37f64e9ad8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e5f0938cdffelyCz7r5e4Gk5QA",
+        "model": "anthropic/claude-sonnet-5-5"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
