@@ -129,7 +129,7 @@ func TestParseBench(t *testing.T) {
 		if *file != "" {
 			runSinglePage(t, *file, *pageURL, capture.Options{Extractor: capture.Extractors["krip"]})
 			fmt.Println("--- ours ---")
-			runSinglePage(t, *file, *pageURL, capture.Options{Extractor: capture.CookarrExtractor{}})
+			runSinglePage(t, *file, *pageURL, capture.Options{Extractor: capture.Extractor{}})
 			return
 		}
 		runComparison(t, *sources, *fixtures, *outDir, *verbose)
@@ -137,7 +137,7 @@ func TestParseBench(t *testing.T) {
 	}
 	ex, ok := capture.Extractors[*extractor]
 	if *extractor == "ours" {
-		ex, ok = capture.CookarrExtractor{}, true
+		ex, ok = capture.Extractor{}, true
 	}
 	if !ok {
 		t.Fatalf("unknown extractor %q", *extractor)
@@ -232,7 +232,7 @@ func runComparison(t *testing.T, sources, fixtures, outDir string, verbose bool)
 		}
 	}
 	krip := capture.Options{Extractor: capture.Extractors["krip"]}
-	ours := capture.Options{Extractor: capture.CookarrExtractor{}}
+	ours := capture.Options{Extractor: capture.Extractor{}}
 	var output bytes.Buffer
 	w := tabwriter.NewWriter(&output, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(w, "FIXTURE\tKRIP ING\tKRIP STEPS\tOURS ING\tOURS STEPS\tCOUNT MATCH\tKRIP MS\tOURS MS")

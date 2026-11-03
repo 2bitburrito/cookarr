@@ -14,23 +14,49 @@ import (
 )
 
 // Extractor reads Recipe objects from JSON-LD script elements.
-// Microdata and HTML fallbacks can be added here as separately tested stages.
-type CookarrExtractor struct{}
+// Microdata and HTML fallbacks can be added here as separate stages.
+type Extractor struct{}
 
 // Name identifies this extractor in stored metadata.
-func (CookarrExtractor) Name() string { return "cookarr" }
+func (Extractor) Name() string { return "cookarr" }
 
-// Extract parses the HTML and returns the first usable schema.org Recipe
-// object found in application/ld+json scripts. Malformed JSON-LD blocks are
-// ignored so one bad block does not prevent parsing other blocks on the page.
-func (CookarrExtractor) Extract(pageURL string, page []byte) (*Structured, error) {
+// Extract parses the HTML and runs each extraction stage in order. Each stage
+// receives the result so far (nil if nothing was found) and returns the
+// updated result. The condition for running a stage is checked here, at the
+// call site.
+func (Extractor) Extract(pageURL string, page []byte) (*Structured, error) {
 	root, err := html.Parse(bytes.NewReader(page))
 	if err != nil {
 		return nil, fmt.Errorf("parse html: %w", err)
 	}
+
+	var result *Structured
+
+	// Stage 1: JSON-LD. Always runs.
+	result = jsonLDStage(root, result)
+
+	// Stage 2: h2/h3 keyword headings. Runs when there is no result or
+	// the result is missing ingredients or steps.
+	if result == nil || len(result.Ingredients) == 0 || len(result.Steps) == 0 {
+		result = headingsStage(root, result)
+	}
+
+	if result != nil && hasRecipeData(result) {
+		return result, nil
+	}
+	return nil, errors.New("no recipe data found in JSON-LD or recognized HTML sections")
+}
+
+// jsonLDStage is the happy-path stage. It returns the best schema.org Recipe
+// object found in application/ld+json scripts, or the incoming result when
+// none is found. Malformed JSON-LD blocks are ignored so one bad block does
+// not prevent parsing other blocks on the page.
+func jsonLDStage(root *html.Node, result *Structured) *Structured {
 	var recipes []map[string]any
 	walk(root, func(n *html.Node) {
-		if n.Type != html.ElementNode || n.Data != "script" || !strings.Contains(strings.ToLower(attr(n, "type")), "ld+json") {
+		if n.Type != html.ElementNode ||
+			n.Data != "script" ||
+			!strings.Contains(strings.ToLower(attr(n, "type")), "ld+json") {
 			return
 		}
 		var value any
@@ -41,44 +67,45 @@ func (CookarrExtractor) Extract(pageURL string, page []byte) (*Structured, error
 
 	// Prefer the JSON-LD candidate with the most useful recipe content. Pages
 	// can contain several Recipe objects, including incomplete carousel cards.
-	var result *Structured
+	var best *Structured
 	for _, candidate := range recipes {
 		candidateResult := fromRecipe(candidate)
-		if result == nil || recipeScore(candidateResult) > recipeScore(result) {
-			result = candidateResult
+		if best == nil || recipeScore(candidateResult) > recipeScore(best) {
+			best = candidateResult
 		}
 	}
+	if best == nil {
+		return result
+	}
+	best.Source = SourceJSONLD
+	return best
+}
+
+// headingsStage is the fallback stage. When ingredients or steps are
+// still missing, it looks for h2/h3 headings with recipe keywords and fills
+// the gaps from their sections. A nil result is treated as empty.
+func headingsStage(root *html.Node, result *Structured) *Structured {
 	if result == nil {
 		result = &Structured{}
-	} else {
-		result.Source = SourceJSONLD
 	}
-
-	// If JSON-LD is absent or incomplete, make a second pass over headings and
-	// use matching ingredient/instruction sections to fill missing fields.
-	if len(result.Ingredients) == 0 || len(result.Steps) == 0 {
-		parsedSections := extractHeadingSections(root)
-		filled := false
-		if len(result.Ingredients) == 0 && len(parsedSections.ingredients) > 0 {
-			result.Ingredients = parsedSections.ingredients
-			filled = true
-		}
-		if len(result.Steps) == 0 && len(parsedSections.steps) > 0 {
-			result.Steps = parsedSections.steps
-			filled = true
-		}
-		if filled {
-			if result.Source == SourceJSONLD {
-				result.Source = SourceJSONLDHeadings
-			} else {
-				result.Source = SourceHeadings
-			}
+	parsedSections := extractHeadingSections(root)
+	filled := false
+	if len(result.Ingredients) == 0 && len(parsedSections.ingredients) > 0 {
+		result.Ingredients = parsedSections.ingredients
+		filled = true
+	}
+	if len(result.Steps) == 0 && len(parsedSections.steps) > 0 {
+		result.Steps = parsedSections.steps
+		filled = true
+	}
+	if filled {
+		if result.Source == SourceJSONLD {
+			result.Source = SourceJSONLDHeadings
+		} else {
+			result.Source = SourceHeadings
 		}
 	}
-	if hasRecipeData(result) {
-		return result, nil
-	}
-	return nil, errors.New("no recipe data found in JSON-LD or recognized HTML sections")
+	return result
 }
 
 // recipeScore prefers JSON-LD candidates with ingredients and instructions;

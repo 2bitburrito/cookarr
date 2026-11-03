@@ -19,7 +19,7 @@ func parseFixture(t *testing.T, slug, pageURL string) *capture.Recipe {
 	if err != nil {
 		t.Skipf("fixture %s missing; run scripts/fetch-fixtures.sh", slug)
 	}
-	rec, err := capture.Parse(pageURL, page, capture.Options{Extractor: capture.CookarrExtractor{}})
+	rec, err := capture.Parse(pageURL, page, capture.Options{Extractor: capture.Extractor{}})
 	if err != nil {
 		t.Fatalf("Parse(%s): %v (warnings: %v)", slug, err, rec.Warnings)
 	}
@@ -149,7 +149,7 @@ func TestParseCorpusInvariants(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rec, err := capture.Parse(e.url, page, capture.Options{Extractor: capture.CookarrExtractor{}})
+			rec, err := capture.Parse(e.url, page, capture.Options{Extractor: capture.Extractor{}})
 			if err != nil {
 				if _, expected := noRecipe[e.slug]; !expected {
 					t.Logf("no recipe (not in noRecipe list): %v", err)
@@ -191,7 +191,7 @@ func TestParseNonRecipeFixtureReturnsErrNoRecipe(t *testing.T) {
 	if err != nil {
 		t.Skip("fixture missing")
 	}
-	rec, err := capture.Parse("https://www.bbcgoodfood.com/health/healthy-food-guides/15-best-healthy-cake-recipes", page, capture.Options{Extractor: capture.CookarrExtractor{}})
+	rec, err := capture.Parse("https://www.bbcgoodfood.com/health/healthy-food-guides/15-best-healthy-cake-recipes", page, capture.Options{Extractor: capture.Extractor{}})
 	if err == nil || rec == nil {
 		t.Fatalf("want partial recipe and ErrNoRecipe, got rec=%v err=%v", rec, err)
 	}

@@ -56,7 +56,7 @@ type StructuredExtractor interface {
 // Extractors lists the available structured extractors by name.
 var Extractors = map[string]StructuredExtractor{
 	"krip":    Krip{},
-	"cookarr": CookarrExtractor{},
+	"cookarr": Extractor{},
 }
 
 // Krip adapts github.com/borschtapp/krip.

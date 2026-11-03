@@ -24,7 +24,7 @@ func TestExtractorReadsRecipeFromJSONLDGraph(t *testing.T) {
 	 ]}</script>
 	</head><body></body></html>`)
 
-	recipe, err := (CookarrExtractor{}).Extract("https://example.test/soup", html)
+	recipe, err := (Extractor{}).Extract("https://example.test/soup", html)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestExtractorReadsRecipeFromJSONLDGraph(t *testing.T) {
 
 func TestExtractorRejectsArticleOnlyJSONLD(t *testing.T) {
 	page := []byte(`<script type="application/ld+json">{"@type":"Article","headline":"Not a recipe"}</script>`)
-	if _, err := (CookarrExtractor{}).Extract("https://example.test/article", page); err == nil {
+	if _, err := (Extractor{}).Extract("https://example.test/article", page); err == nil {
 		t.Fatal("expected no-recipe error")
 	}
 }
@@ -68,7 +68,7 @@ func TestExtractorUsesHeadingsWhenJSONLDSectionsAreMissing(t *testing.T) {
 	<div><h3>Step 2</h3><p>Serve warm.</p></div>
 	</body></html>`)
 
-	recipe, err := (CookarrExtractor{}).Extract("https://example.test/tart", page)
+	recipe, err := (Extractor{}).Extract("https://example.test/tart", page)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestExtractorUsesHeadingsWhenJSONLDSectionsAreMissing(t *testing.T) {
 
 func TestExtractorUsesHeadingFallbackWithoutJSONLD(t *testing.T) {
 	page := []byte(`<h2>Ingredients</h2><p>300 g flour</p><h2>Method</h2><ol><li>Mix the flour.</li></ol>`)
-	recipe, err := (CookarrExtractor{}).Extract("https://example.test/bread", page)
+	recipe, err := (Extractor{}).Extract("https://example.test/bread", page)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestHeadingFallbackHandlesNigellaAndSaveurFixtures(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			recipe, err := (CookarrExtractor{}).Extract(fixture.url, page)
+			recipe, err := (Extractor{}).Extract(fixture.url, page)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -122,7 +122,7 @@ func TestHeadingFallbackHandlesNigellaAndSaveurFixtures(t *testing.T) {
 func extractJSONLD(t *testing.T, recipeJSON string) *Structured {
 	t.Helper()
 	page := []byte(`<html><head><script type="application/ld+json">` + recipeJSON + `</script></head><body></body></html>`)
-	recipe, err := (CookarrExtractor{}).Extract("https://example.test/r", page)
+	recipe, err := (Extractor{}).Extract("https://example.test/r", page)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestSourceReportsWhereFieldsCameFrom(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, err := (CookarrExtractor{}).Extract("https://example.test/r", []byte(tt.page))
+			r, err := (Extractor{}).Extract("https://example.test/r", []byte(tt.page))
 			if err != nil {
 				t.Fatal(err)
 			}
