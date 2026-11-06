@@ -1,0 +1,88 @@
+internal/fetch/fetch_test.go
+  s_412fc34f88d81d::t_c646df13f2529e 1-43
+internal/store/sqlitedb/recipe.sql.go
+  s_412fc34f88d81d::t_5d61bcdf42c07f 1-134
+internal/store/migrations/sqlite/0002_recipe_json.sql
+  s_412fc34f88d81d::t_266331e30325ac 21-35
+  s_412fc34f88d81d::t_2b9287fb632cb3 1-20
+db/queries/sqlite/recipe.sql
+  s_412fc34f88d81d::t_2b9287fb632cb3 1-18
+internal/store/migrations/sqlite/0001_init.sql
+  s_412fc34f88d81d::t_0784c119522767 2-3,5-10,12-17,19-29
+  s_412fc34f88d81d::t_2b9287fb632cb3 1,31-35
+  s_412fc34f88d81d::t_266331e30325ac 4,11,18,30
+internal/api/api.go
+  s_412fc34f88d81d::t_8eab6d7eb49269 1-152
+internal/store/sqlitedb/session.sql.go
+  s_412fc34f88d81d::t_5d61bcdf42c07f 1-36,38-39,41-63
+  s_412fc34f88d81d::t_03be1382501318 37,40
+internal/api/auth.go
+  s_412fc34f88d81d::t_6c3233d68a8a91 1-223
+  s_412fc34f88d81d::t_4fe04e65255f2d 224-226
+internal/store/store.go
+  s_412fc34f88d81d::t_82a26b579fcc13 1-25,28-63
+  s_412fc34f88d81d::t_39ab260f54f296 26-27
+internal/auth/auth.go
+  s_412fc34f88d81d::t_b7e64272746798 1-90
+internal/fetch/fetch.go
+  s_412fc34f88d81d::t_daeb0f0327c0b5 1-96
+internal/store/sqlitedb/db.go
+  s_412fc34f88d81d::t_5d61bcdf42c07f 1-31
+internal/api/api_test.go
+  s_412fc34f88d81d::t_1910d09f2f4429 6
+  s_412fc34f88d81d::t_40e5b148681258 1-5,7-151,153-174
+  s_412fc34f88d81d::t_9050159fc9cba6 152
+magefile.go
+  s_412fc34f88d81d::t_2b9287fb632cb3 11-15
+internal/store/sqlitedb/owner.sql.go
+  s_412fc34f88d81d::t_5d61bcdf42c07f 1-66
+cmd/cookarr/main.go
+  s_412fc34f88d81d::t_08f75d70074d57 1-164
+internal/store/sqlitedb/models.go
+  s_412fc34f88d81d::t_5d61bcdf42c07f 1-31
+internal/store/sqlite.go
+  s_412fc34f88d81d::t_ac59bcd032340c 10,16-17,27,49,58-59,62,66-67,80,85-87,96,98,100,109-110,114,117,126,129-131,135,146,162-166,174,181-182,189-190,193,197-205,209,213
+  s_412fc34f88d81d::t_03be1382501318 26
+  s_412fc34f88d81d::t_7ec6bb494cbc11 1-9,11-15,18-25,28-48,50-57,60-61,63-65,68-79,81-84,88-95,97,99,101-108,111-113,115-116,118-125,127-128,132-134,136-145,147-161,167-173,175-180,183-188,191-192,194-196,206-208,210-212,214-217
+db/queries/sqlite/session.sql
+  s_412fc34f88d81d::t_266331e30325ac 14
+  s_412fc34f88d81d::t_2b9287fb632cb3 1-13
+.gitignore
+  s_412fc34f88d81d::t_627d9db3db1710 29-31
+internal/auth/auth_test.go
+  s_412fc34f88d81d::t_14a572a1335a5b 1-29
+internal/config/config.go
+  s_412fc34f88d81d::t_d91e1cf640ac97 1-62
+internal/api/recipes.go
+  s_412fc34f88d81d::t_e4e8b5e52ae68d 1-140
+internal/store/sqlite_test.go
+  s_412fc34f88d81d::t_82d5fc579d810c 9,145
+  s_412fc34f88d81d::t_f6bfdcb81f4b81 1-8,10-144,146-208
+go.mod
+  s_412fc34f88d81d::t_03be1382501318 9
+  s_412fc34f88d81d::t_61bde2bcf5eb05 22,25,28,32-33,38,40-42
+  s_412fc34f88d81d::t_b1b1f406db4567 29,34,36-37
+  s_412fc34f88d81d::t_a682f2b2519134 10,12-13
+db/sqlc.yaml
+  s_412fc34f88d81d::t_2b9287fb632cb3 1-10
+db/queries/sqlite/owner.sql
+  s_412fc34f88d81d::t_2b9287fb632cb3 1-12
+go.sum
+  s_412fc34f88d81d::t_92561740c752a1 15-16,21-24,27-28,31-34,41-46,49-50,55-56,59-62,65-70,73-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "76fcff7aad6f81078fd81f38ad5b59c378a0d06a",
+  "prompts": {},
+  "sessions": {
+    "s_412fc34f88d81d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e5ef653bfffe5i7JxOzbLWMZqE",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
