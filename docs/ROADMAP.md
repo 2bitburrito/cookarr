@@ -5,16 +5,16 @@ Each phase ends with something runnable.
 ## Phase 0: Spikes
 
 - [x] **Parser corpus:** save about 30 real recipe pages as fixtures (big sites, small blogs, ad-heavy pages, a few with no JSON-LD). Keep `krip` as a baseline and measure the in-house extractor against it.
-- [ ] **Story extraction:** run readability on the same fixtures and confirm the maintained fork.
-- [ ] **Dockview in Svelte:** gaps, coloured active border, pill tabs, floating groups, popout, JSON save and restore, and deeply nested splits (issue #613).
-- [ ] **Capture:** minimal extension that POSTs stripped `{url, html}` to a stub, including the 413 to URL-only fallback.
+- [x] **Story extraction:** run readability on the same fixtures and confirm the maintained fork.
+- [x] **Dockview in Svelte:** gaps, coloured active border, pill tabs, floating groups, popout, JSON save and restore, and deeply nested splits (issue #613).
 - Exit: parser chosen, Dockview confirmed or a fallback decided.
 
 ## Phase 1: Server core
 
 - [ ] Repo layout, config, structured logging
-- [ ] goose + sqlc on SQLite and Postgres, with CI against both
+- [ ] Go Std lib restful api
 - [ ] Owner login, sessions, extension tokens, `AUTH_DISABLED`, container-only password reset
+- [ ] goose + sqlc on SQLite and Postgres, with CI against both
 - [ ] Capture pipeline: parse, sanitise, image fetch with SSRF guard, store, keep stripped HTML
 - [ ] URL-fetch path
 - [ ] Dockerfile (Node build stage) and compose example

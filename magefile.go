@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+// Generate regenerates the typed database queries using the pinned sqlc version.
+func Generate() error {
+	return run("go", "run", "github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0", "generate", "-f", "db/sqlc.yaml")
+}
+
 // Fixtures downloads the test fixtures listed in internal/capture/testdata/sources.tsv via scripts/fetch-fixtures.sh.
 func Fixtures() error {
 	return run("bash", "scripts/fetch-fixtures.sh")
