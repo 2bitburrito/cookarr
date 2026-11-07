@@ -30,8 +30,11 @@ func main() {
 	switch cmd {
 	case "serve":
 		err = serve()
+
 	case "reset-password":
+		// TODO: This should probably just be a callable script on the container...
 		err = resetPassword()
+
 	default:
 		fmt.Fprintf(os.Stderr, "usage: cookarr [serve|reset-password]\n")
 		os.Exit(2)
@@ -55,7 +58,7 @@ func serve() error {
 		return err
 	}
 	log := newLogger(cfg)
-	db, err := store.OpenSQLite(cfg.DBPath)
+	db, err := openStore(cfg)
 	if err != nil {
 		return err
 	}
@@ -81,33 +84,37 @@ func serve() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	errc := make(chan error, 1)
+
 	go func() {
-		log.Info("listening", "addr", cfg.Addr, "db", cfg.DBPath)
+		log.Info("listening", "addr", cfg.Addr, "db_driver", cfg.DBDriver)
 		errc <- srv.ListenAndServe()
 	}()
+
 	select {
 	case err := <-errc:
 		return err
 	case <-ctx.Done():
 	}
+
 	log.Info("shutting down")
 	shutdown, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdown); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
+
 	return nil
 }
 
 // resetPassword sets a new owner password and revokes every session. It talks
-// to the database directly, so it only works where you can reach the data file
+// to the database directly, so it only works where you have database access
 // (e.g. docker exec -it cookarr cookarr reset-password).
 func resetPassword() error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
-	db, err := store.OpenSQLite(cfg.DBPath)
+	db, err := openStore(cfg)
 	if err != nil {
 		return err
 	}
@@ -136,6 +143,21 @@ func resetPassword() error {
 	return nil
 }
 
+func openStore(cfg config.Config) (store.Store, error) {
+	switch cfg.DBDriver {
+	case "sqlite":
+		return store.OpenSQLite(cfg.DBPath)
+
+	case "postgres":
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		return store.OpenPostgres(ctx, cfg.DatabaseURL)
+
+	default:
+		return nil, fmt.Errorf("unsupported database driver %q", cfg.DBDriver)
+	}
+}
+
 func readPassword() (string, error) {
 	fd := int(os.Stdin.Fd())
 	if !term.IsTerminal(fd) {
@@ -146,19 +168,23 @@ func readPassword() (string, error) {
 		return strings.TrimRight(line, "\r\n"), nil
 	}
 	fmt.Fprint(os.Stderr, "New password: ")
+
 	a, err := term.ReadPassword(fd)
 	fmt.Fprintln(os.Stderr)
 	if err != nil {
 		return "", err
 	}
+
 	fmt.Fprint(os.Stderr, "Confirm password: ")
 	b, err := term.ReadPassword(fd)
 	fmt.Fprintln(os.Stderr)
 	if err != nil {
 		return "", err
 	}
+
 	if string(a) != string(b) {
 		return "", errors.New("passwords do not match")
 	}
+
 	return string(a), nil
 }

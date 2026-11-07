@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hpalmer/cookarr/internal/capture"
+	"github.com/hpalmer/cookarr/internal/store/postgresdb"
 	"github.com/hpalmer/cookarr/internal/store/sqlitedb"
 	"github.com/pressly/goose/v3"
 )
@@ -27,8 +28,14 @@ func openTestStore(t *testing.T) *SQLite {
 }
 
 func TestOwnerAndSessions(t *testing.T) {
-	s := openTestStore(t)
+	forEachStore(t, testOwnerAndSessions)
+}
+
+func testOwnerAndSessions(t *testing.T, s Store) {
 	ctx := context.Background()
+	if exists, err := s.OwnerExists(ctx); err != nil || exists {
+		t.Fatalf("unexpected owner before setup: %v %v", exists, err)
+	}
 	if _, err := s.Owner(ctx); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing owner: %v", err)
 	}
@@ -37,6 +44,21 @@ func TestOwnerAndSessions(t *testing.T) {
 	}
 	if err := s.CreateOwner(ctx, "owner", "old-hash"); err != nil {
 		t.Fatal(err)
+	}
+	if exists, err := s.OwnerExists(ctx); err != nil || !exists {
+		t.Fatalf("owner missing after setup: %v %v", exists, err)
+	}
+	if valid, err := s.SessionValid(ctx, "unknown"); err != nil || valid {
+		t.Fatalf("unknown session accepted: %v", err)
+	}
+	if err := s.CreateSession(ctx, "logout", time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteSession(ctx, "logout"); err != nil {
+		t.Fatal(err)
+	}
+	if valid, err := s.SessionValid(ctx, "logout"); err != nil || valid {
+		t.Fatalf("deleted session accepted: %v", err)
 	}
 	if err := s.CreateOwner(ctx, "other", "hash"); !errors.Is(err, ErrOwnerExists) {
 		t.Fatalf("duplicate owner: %v", err)
@@ -70,7 +92,10 @@ func TestOwnerAndSessions(t *testing.T) {
 }
 
 func TestConcurrentSetup(t *testing.T) {
-	s := openTestStore(t)
+	forEachStore(t, testConcurrentSetup)
+}
+
+func testConcurrentSetup(t *testing.T, s Store) {
 	var wg sync.WaitGroup
 	results := make(chan error, 2)
 	for range 2 {
@@ -95,9 +120,20 @@ func TestConcurrentSetup(t *testing.T) {
 }
 
 func TestRecipeQueries(t *testing.T) {
-	s := openTestStore(t)
+	forEachStore(t, testRecipeQueries)
+}
+
+func testRecipeQueries(t *testing.T, s Store) {
 	ctx := context.Background()
-	r := &capture.Recipe{Title: "Soup", SourceURL: "https://example.com/soup", Ingredients: []capture.Ingredient{{Text: "water"}}}
+	items, total, err := s.ListRecipes(ctx, 50, 0)
+	if err != nil || total != 0 || items == nil || len(items) != 0 {
+		t.Fatalf("empty library: %+v total=%d err=%v", items, total, err)
+	}
+	r := &capture.Recipe{
+		Title: "Soup", Description: "A soup", SourceURL: "https://example.com/soup", SiteName: "Recipes",
+		Ingredients: []capture.Ingredient{{Text: "water"}},
+		Photos:      []capture.Photo{{URL: "https://example.com/photo.jpg", Role: capture.PhotoHero}},
+	}
 	first, err := s.CreateRecipe(ctx, r, []byte("<html></html>"))
 	if err != nil {
 		t.Fatal(err)
@@ -110,9 +146,16 @@ func TestRecipeQueries(t *testing.T) {
 	if err != nil || got.Title != "Soup" || got.Ingredients[0].Text != "water" {
 		t.Fatalf("round trip: %+v %v", got, err)
 	}
-	items, total, err := s.ListRecipes(ctx, 1, 0)
+	items, total, err = s.ListRecipes(ctx, 1, 0)
 	if err != nil || total != 2 || len(items) != 1 || items[0].ID != second.ID {
 		t.Fatalf("pagination: %+v total=%d err=%v", items, total, err)
+	}
+	if items[0].Title != r.Title || items[0].Description != r.Description || items[0].SourceURL != r.SourceURL || items[0].SiteName != r.SiteName || items[0].HeroURL != r.Photos[0].URL || items[0].CapturedAt.IsZero() {
+		t.Fatalf("summary mismatch: %+v", items[0])
+	}
+	items, total, err = s.ListRecipes(ctx, 1, 1)
+	if err != nil || total != 2 || len(items) != 1 || items[0].ID != first.ID {
+		t.Fatalf("offset: %+v total=%d err=%v", items, total, err)
 	}
 	if err := s.DeleteRecipe(ctx, first.ID); err != nil {
 		t.Fatal(err)
@@ -123,7 +166,14 @@ func TestRecipeQueries(t *testing.T) {
 	if _, err := s.GetRecipe(ctx, first.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing get: %v", err)
 	}
-	if _, err := s.queries.CreateRecipe(ctx, sqlitedb.CreateRecipeParams{Data: "not JSON", StrippedHtml: []byte{}}); err == nil {
+	var jsonErr error
+	switch s := s.(type) {
+	case *SQLite:
+		_, jsonErr = s.queries.CreateRecipe(ctx, sqlitedb.CreateRecipeParams{Data: "not JSON", StrippedHtml: []byte{}})
+	case *Postgres:
+		_, jsonErr = s.queries.CreateRecipe(ctx, postgresdb.CreateRecipeParams{Data: []byte("not JSON"), StrippedHtml: []byte{}, CapturedAt: time.Now()})
+	}
+	if jsonErr == nil {
 		t.Fatal("invalid JSON was accepted")
 	}
 }
@@ -205,4 +255,12 @@ func TestGooseDownAndUp(t *testing.T) {
 	if exists, err := s.OwnerExists(ctx); err != nil || exists {
 		t.Fatalf("fresh schema after rollback: %v %v", exists, err)
 	}
+}
+
+// Run the identical contract against both backends. Each Postgres test gets a
+// random schema; no existing tables are touched. CI always sets this URL.
+func forEachStore(t *testing.T, test func(*testing.T, Store)) {
+	t.Helper()
+	t.Run("sqlite", func(t *testing.T) { test(t, openTestStore(t)) })
+	t.Run("postgres", func(t *testing.T) { test(t, openTestPostgres(t)) })
 }

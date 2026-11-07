@@ -8,3 +8,11 @@ sql:
         package: sqlitedb
         out: ../internal/store/sqlitedb
         emit_empty_slices: true
+  - engine: postgresql
+    schema: ../internal/store/migrations/postgres
+    queries: queries/postgres
+    gen:
+      go:
+        package: postgresdb
+        out: ../internal/store/postgresdb
+        emit_empty_slices: true

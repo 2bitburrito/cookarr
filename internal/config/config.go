@@ -10,6 +10,8 @@ import (
 type Config struct {
 	Addr         string
 	DBPath       string
+	DBDriver     string
+	DatabaseURL  string
 	AuthDisabled bool
 	// MaxBodyBytes caps import request bodies and fetched pages.
 	MaxBodyBytes int64
@@ -20,9 +22,20 @@ func Load() (Config, error) {
 	c := Config{
 		Addr:         env("COOKARR_ADDR", ":8080"),
 		DBPath:       env("COOKARR_DB", "data/cookarr.db"),
+		DBDriver:     env("COOKARR_DB_DRIVER", "sqlite"),
+		DatabaseURL:  os.Getenv("COOKARR_DATABASE_URL"),
 		MaxBodyBytes: 16 << 20,
 	}
 
+	switch c.DBDriver {
+	case "sqlite":
+	case "postgres":
+		if c.DatabaseURL == "" {
+			return c, fmt.Errorf("COOKARR_DATABASE_URL is required when COOKARR_DB_DRIVER=postgres")
+		}
+	default:
+		return c, fmt.Errorf("COOKARR_DB_DRIVER must be sqlite or postgres")
+	}
 	var err error
 	if c.AuthDisabled, err = envBool("AUTH_DISABLED"); err != nil {
 		return c, err

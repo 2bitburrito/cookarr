@@ -1,5 +1,5 @@
-// Package store persists the owner, sessions and recipes behind an interface,
-// so a Postgres implementation can sit beside the SQLite one.
+// Package store persists the owner, sessions and recipes through interchangeable
+// SQLite and Postgres implementations.
 package store
 
 import (

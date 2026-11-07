@@ -11,21 +11,14 @@ Each phase ends with something runnable.
 
 ## Phase 1: Server core
 
-- [ ] Repo layout, config, structured logging
-- [ ] Go Std lib restful api
-- [ ] Owner login, sessions, extension tokens, `AUTH_DISABLED`, container-only password reset
+- [x] Repo layout, config, structured logging
+- [x] Go Std lib restful api
+- [x] Owner login, sessions, extension tokens, `AUTH_DISABLED`, container-only password reset
 - [ ] goose + sqlc on SQLite and Postgres, with CI against both
 - [ ] Capture pipeline: parse, sanitise, image fetch with SSRF guard, store, keep stripped HTML
 - [ ] URL-fetch path
 - [ ] Dockerfile (Node build stage) and compose example
 - Exit: paste a URL and get a clean stored recipe.
-
-## Phase 2: Extension
-
-- [ ] MV3 extension: options page (server URL, login), save button, success and error states
-- [ ] Detect a recipe on the page and badge the icon
-- [ ] Browser builds per the open question
-- Exit: one click on a real recipe site saves it.
 
 ## Phase 3: Tiling workspace, the main feature
 
@@ -33,7 +26,15 @@ Each phase ends with something runnable.
 - [ ] Dockview workspace: tabs, splits, float, popout
 - [ ] Layout save and restore, built-in presets, preset manager, per-recipe override, per-device-class layouts
 - [ ] Keyboard shortcuts, status bar
+- [ ] Ensure a cohesive experience for phone/tablet
 - Exit: arrange a recipe your way and it stays that way.
+
+## Phase 3: Extension
+
+- [ ] MV3 extension: options page (server URL, login), save button, success and error states
+- [ ] Detect a recipe on the page and badge the icon
+- [ ] Browser builds per the open question
+- Exit: one click on a real recipe site saves it.
 
 ## Phase 4: Look, prefs and cook mode
 
@@ -62,7 +63,7 @@ Each phase ends with something runnable.
 
 ## Later
 
-- Video capture
+- Video capture (?)
 - Ingredient parsing, scaling, unit conversion (if not in v1)
 - Extension-side image upload for hotlink-protected hosts
 - Shopping list and meal planner (Mealie and Tandoor already do these well)
