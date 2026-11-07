@@ -1,6 +1,36 @@
 package config
 
-import "testing"
+import (
+	"log/slog"
+	"testing"
+)
+
+func TestLogLevel(t *testing.T) {
+	for _, tt := range []struct {
+		value   string
+		want    slog.Level
+		wantErr bool
+	}{
+		{"", slog.LevelInfo, false},
+		{"debug", slog.LevelDebug, false},
+		{"INFO", slog.LevelInfo, false},
+		{"warn", slog.LevelWarn, false},
+		{"ERROR", slog.LevelError, false},
+		{"verbose", 0, true},
+	} {
+		t.Run(tt.value, func(t *testing.T) {
+			t.Setenv("LOG_LEVEL", tt.value)
+			t.Setenv("DB_DRIVER", "sqlite")
+			cfg, err := Load()
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Load() error = %v", err)
+			}
+			if !tt.wantErr && cfg.LogLevel != tt.want {
+				t.Fatalf("level = %v, want %v", cfg.LogLevel, tt.want)
+			}
+		})
+	}
+}
 
 func TestDatabaseConfig(t *testing.T) {
 	for _, tt := range []struct {
@@ -14,12 +44,12 @@ func TestDatabaseConfig(t *testing.T) {
 		{name: "unknown", driver: "mysql", wantErr: true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("COOKARR_DB_DRIVER", tt.driver)
-			t.Setenv("COOKARR_DATABASE_URL", tt.url)
-			t.Setenv("COOKARR_DB", "")
+			t.Setenv("DB_DRIVER", tt.driver)
+			t.Setenv("DATABASE_URL", tt.url)
+			t.Setenv("DB", "")
 			t.Setenv("AUTH_DISABLED", "")
-			t.Setenv("COOKARR_LOG_JSON", "")
-			t.Setenv("COOKARR_MAX_BODY_BYTES", "")
+			t.Setenv("LOG_JSON", "")
+			t.Setenv("MAX_BODY_BYTES", "")
 			c, err := Load()
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Load() error = %v", err)

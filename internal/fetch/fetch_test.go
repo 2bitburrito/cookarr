@@ -5,8 +5,21 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
+
+func TestFetchErrorOmitsURLSecrets(t *testing.T) {
+	_, err := New(1024, false).Get(context.Background(), "http://user:password@127.0.0.1/private?token=secret")
+	if !errors.Is(err, ErrBlocked) {
+		t.Fatalf("want ErrBlocked, got %v", err)
+	}
+	for _, secret := range []string{"user", "password", "private", "secret"} {
+		if strings.Contains(err.Error(), secret) {
+			t.Fatalf("error contains URL data: %v", err)
+		}
+	}
+}
 
 func TestBlocksLoopback(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

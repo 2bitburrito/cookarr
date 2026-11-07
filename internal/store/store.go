@@ -5,10 +5,25 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/hpalmer/cookarr/internal/capture"
 )
+
+// Open selects a database backend. Connection strings are never logged.
+func Open(ctx context.Context, driver, path, databaseURL string) (Store, error) {
+	slog.DebugContext(ctx, "opening database", "driver", driver)
+	switch driver {
+	case "sqlite":
+		return OpenSQLite(path)
+	case "postgres":
+		return OpenPostgres(ctx, databaseURL)
+	default:
+		return nil, fmt.Errorf("unsupported database driver %q", driver)
+	}
+}
 
 var (
 	ErrNotFound    = errors.New("store: not found")

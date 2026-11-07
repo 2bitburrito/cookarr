@@ -95,6 +95,7 @@ func (s *Server) decodeJSON(w http.ResponseWriter, r *http.Request, dst any) boo
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxBodyBytes)
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(dst); err != nil {
+		s.log.DebugContext(r.Context(), "request JSON rejected", "method", r.Method, "path", r.URL.Path)
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
 			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "request body too large")
@@ -120,8 +121,16 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
+		completed := false
+		defer func() {
+			status := sw.status
+			if !completed {
+				status = http.StatusInternalServerError
+			}
+			s.log.InfoContext(r.Context(), "request", "method", r.Method, "path", r.URL.Path, "status", status, "dur", time.Since(start), "completed", completed)
+		}()
 		next.ServeHTTP(sw, r)
-		s.log.Info("request", "method", r.Method, "path", r.URL.Path, "status", sw.status, "dur", time.Since(start))
+		completed = true
 	})
 }
 
@@ -135,6 +144,7 @@ func (s *Server) sameOrigin(next http.Handler) http.Handler {
 			if origin := r.Header.Get("Origin"); origin != "" {
 				u, err := url.Parse(origin)
 				if err != nil || u.Host != r.Host {
+					s.log.DebugContext(r.Context(), "cross-origin request rejected", "method", r.Method, "path", r.URL.Path)
 					writeError(w, http.StatusForbidden, "forbidden", "cross-origin request rejected")
 					return
 				}

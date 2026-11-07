@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -59,11 +60,12 @@ func (s *SQLite) migrate() error {
 	if err != nil {
 		return err
 	}
-	provider, err := goose.NewProvider(goose.DialectSQLite3, s.db, migrations)
+	provider, err := goose.NewProvider(goose.DialectSQLite3, s.db, migrations, goose.WithSlog(slog.Default()))
 	if err != nil {
 		return err
 	}
-	_, err = provider.Up(context.Background())
+	applied, err := provider.Up(context.Background())
+	slog.Debug("database migrations completed", "driver", "sqlite", "applied", len(applied), "success", err == nil)
 	return err
 }
 

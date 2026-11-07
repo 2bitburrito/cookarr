@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 )
@@ -16,14 +17,16 @@ type Config struct {
 	// MaxBodyBytes caps import request bodies and fetched pages.
 	MaxBodyBytes int64
 	LogJSON      bool
+	LogLevel     slog.Level
+	Logger       *slog.Logger
 }
 
 func Load() (Config, error) {
 	c := Config{
-		Addr:         env("COOKARR_ADDR", ":8080"),
-		DBPath:       env("COOKARR_DB", "data/cookarr.db"),
-		DBDriver:     env("COOKARR_DB_DRIVER", "sqlite"),
-		DatabaseURL:  os.Getenv("COOKARR_DATABASE_URL"),
+		Addr:         env("ADDR", ":8080"),
+		DBPath:       env("DB", "data/cookarr.db"),
+		DBDriver:     env("DB_DRIVER", "sqlite"),
+		DatabaseURL:  os.Getenv("DATABASE_URL"),
 		MaxBodyBytes: 16 << 20,
 	}
 
@@ -31,27 +34,36 @@ func Load() (Config, error) {
 	case "sqlite":
 	case "postgres":
 		if c.DatabaseURL == "" {
-			return c, fmt.Errorf("COOKARR_DATABASE_URL is required when COOKARR_DB_DRIVER=postgres")
+			return c, fmt.Errorf("DATABASE_URL is required when DB_DRIVER=postgres")
 		}
 	default:
-		return c, fmt.Errorf("COOKARR_DB_DRIVER must be sqlite or postgres")
+		return c, fmt.Errorf("DB_DRIVER must be sqlite or postgres")
 	}
 	var err error
+	if err := c.LogLevel.UnmarshalText([]byte(env("LOG_LEVEL", "INFO"))); err != nil {
+		return c, fmt.Errorf("LOG_LEVEL: %w", err)
+	}
 	if c.AuthDisabled, err = envBool("AUTH_DISABLED"); err != nil {
 		return c, err
 	}
 
-	if c.LogJSON, err = envBool("COOKARR_LOG_JSON"); err != nil {
+	if c.LogJSON, err = envBool("LOG_JSON"); err != nil {
 		return c, err
 	}
 
-	if v := os.Getenv("COOKARR_MAX_BODY_BYTES"); v != "" {
+	if v := os.Getenv("MAX_BODY_BYTES"); v != "" {
 		n, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || n <= 0 {
-			return c, fmt.Errorf("COOKARR_MAX_BODY_BYTES: invalid value %q", v)
+			return c, fmt.Errorf("MAX_BODY_BYTES: invalid value %q", v)
 		}
 		c.MaxBodyBytes = n
 	}
+	opts := &slog.HandlerOptions{Level: c.LogLevel}
+	var handler slog.Handler = slog.NewTextHandler(os.Stderr, opts)
+	if c.LogJSON {
+		handler = slog.NewJSONHandler(os.Stderr, opts)
+	}
+	c.Logger = slog.New(handler)
 	return c, nil
 }
 

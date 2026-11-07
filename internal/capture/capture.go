@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strings"
 
@@ -15,6 +16,8 @@ import (
 type Options struct {
 	// Extractor is the structured-data extractor. Defaults to krip.
 	Extractor StructuredExtractor
+	// Logger defaults to the application's slog logger.
+	Logger *slog.Logger
 }
 
 // Parse turns a page into a Recipe. page is the HTML as the extension would
@@ -25,10 +28,16 @@ type Options struct {
 // photos and author, along with ErrNoRecipe. Callers can decide whether that
 // is worth saving.
 func Parse(pageURL string, page []byte, opts Options) (*Recipe, error) {
+	log := opts.Logger
+	if log == nil {
+		log = slog.Default()
+	}
 	ex := opts.Extractor
 	if ex == nil {
 		ex = Krip{}
 	}
+	log = log.With("component", "capture", "extractor", ex.Name())
+	log.Debug("parsing page", "input_bytes", len(page))
 	stripped, err := Strip(page)
 	if err != nil {
 		return nil, fmt.Errorf("strip: %w", err)
@@ -41,6 +50,7 @@ func Parse(pageURL string, page []byte, opts Options) (*Recipe, error) {
 	st, err := safeExtract(ex, pageURL, stripped)
 	if err != nil {
 		structErr = err
+		log.Debug("structured extraction failed")
 		rec.Warnings = append(rec.Warnings, "structured: "+err.Error())
 	} else {
 		applyStructured(rec, st, base)
@@ -49,6 +59,7 @@ func Parse(pageURL string, page []byte, opts Options) (*Recipe, error) {
 	sty, err := extractStory(stripped, pageURL)
 	if err != nil {
 		rec.Warnings = append(rec.Warnings, "story: "+err.Error())
+		log.Error("story extraction failed")
 	} else {
 		rec.StoryHTML = sty.HTML
 		if rec.SiteName == "" {
@@ -66,11 +77,13 @@ func Parse(pageURL string, page []byte, opts Options) (*Recipe, error) {
 		rec.Title = pageTitle(stripped)
 	}
 	if !rec.HasRecipe() {
+		log.Warn("no recipe data found", "warnings", len(rec.Warnings))
 		if structErr == nil {
 			structErr = errors.New("structured data has no ingredients and steps")
 		}
 		return rec, fmt.Errorf("%w: %v", ErrNoRecipe, structErr)
 	}
+	log.Debug("page parsed", "ingredients", len(rec.Ingredients), "steps", len(rec.Steps), "photos", len(rec.Photos), "story_bytes", len(rec.StoryHTML), "warnings", len(rec.Warnings))
 	return rec, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"time"
 
 	"github.com/hpalmer/cookarr/internal/capture"
@@ -54,11 +55,12 @@ func (s *Postgres) migrate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	provider, err := goose.NewProvider(goose.DialectPostgres, s.db, migrations)
+	provider, err := goose.NewProvider(goose.DialectPostgres, s.db, migrations, goose.WithSlog(slog.Default()))
 	if err != nil {
 		return err
 	}
-	_, err = provider.Up(ctx)
+	applied, err := provider.Up(ctx)
+	slog.DebugContext(ctx, "database migrations completed", "driver", "postgres", "applied", len(applied), "success", err == nil)
 	return err
 }
 

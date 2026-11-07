@@ -17,13 +17,13 @@ import (
 
 func openTestPostgres(t *testing.T) *Postgres {
 	t.Helper()
-	dsn := os.Getenv("COOKARR_TEST_POSTGRES_URL")
+	dsn := os.Getenv("TEST_POSTGRES_URL")
 	if dsn == "" {
-		t.Skip("set COOKARR_TEST_POSTGRES_URL to run Postgres integration tests")
+		t.Skip("set TEST_POSTGRES_URL to run Postgres integration tests")
 	}
 	u, err := url.Parse(dsn)
 	if err != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") {
-		t.Fatal("COOKARR_TEST_POSTGRES_URL must be a postgres:// or postgresql:// URL")
+		t.Fatal("TEST_POSTGRES_URL must be a postgres:// or postgresql:// URL")
 	}
 	admin, err := sql.Open("pgx", dsn)
 	if err != nil {

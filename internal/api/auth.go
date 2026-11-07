@@ -78,6 +78,7 @@ func (s *Server) setup(w http.ResponseWriter, r *http.Request) {
 	if !s.startSession(w, r) {
 		return
 	}
+	s.log.InfoContext(r.Context(), "owner setup completed")
 	writeJSON(w, http.StatusCreated, map[string]string{"username": c.Username})
 }
 
@@ -89,6 +90,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 
 	ip := clientIP(r)
 	if !s.limiter.allow(ip) {
+		s.log.WarnContext(r.Context(), "login rate limited")
 		w.Header().Set("Retry-After", "60")
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many login attempts")
 		return
@@ -112,6 +114,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 
 	ok, _ := auth.VerifyPassword(c.Password, hash)
 	if err != nil || !ok || c.Username != owner.Username {
+		s.log.WarnContext(r.Context(), "login rejected")
 		s.limiter.fail(ip)
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "invalid username or password")
 		return
@@ -121,6 +124,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.log.InfoContext(r.Context(), "login succeeded")
 	writeJSON(w, http.StatusOK, map[string]string{"username": owner.Username})
 }
 
@@ -132,6 +136,7 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.SetCookie(w, s.cookie("", r, -1))
+	s.log.InfoContext(r.Context(), "logout completed")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -145,6 +150,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	http.SetCookie(w, s.cookie(token, r, int(sessionTTL.Seconds())))
+	s.log.DebugContext(r.Context(), "session created", "ttl", sessionTTL)
 	return true
 }
 
@@ -181,6 +187,7 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 				return
 			}
 		}
+		s.log.DebugContext(r.Context(), "authentication required", "method", r.Method, "path", r.URL.Path)
 		writeError(w, http.StatusUnauthorized, "unauthorized", "login required")
 	})
 }

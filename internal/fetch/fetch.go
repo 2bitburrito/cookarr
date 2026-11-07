@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"syscall"
 	"time"
 )
@@ -37,6 +39,7 @@ func New(maxBytes int64, allowPrivate bool) *Fetcher {
 				return err
 			}
 			if blocked(ap.Addr()) {
+				slog.Debug("fetch connection blocked", "component", "fetch")
 				return ErrBlocked
 			}
 			return nil
@@ -52,7 +55,8 @@ func New(maxBytes int64, allowPrivate bool) *Fetcher {
 				TLSHandshakeTimeout: 10 * time.Second,
 				Proxy:               nil,
 			},
-			CheckRedirect: func(_ *http.Request, via []*http.Request) error {
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				slog.DebugContext(req.Context(), "following redirect", "component", "fetch", "host", req.URL.Hostname(), "redirects", len(via))
 				if len(via) >= 5 {
 					return errors.New("fetch: too many redirects")
 				}
@@ -77,11 +81,21 @@ func (f *Fetcher) Get(ctx context.Context, rawURL string) ([]byte, error) {
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Cookarr/0.1)")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml")
+	start := time.Now()
+	log := slog.Default().With("component", "fetch", "host", req.URL.Hostname())
+	log.DebugContext(ctx, "fetch started", "max_bytes", f.maxBytes)
 	resp, err := f.client.Do(req)
 	if err != nil {
+		// net/http wraps errors with the full URL, which can contain secrets.
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			err = urlErr.Err
+		}
+		log.DebugContext(ctx, "fetch failed", "duration", time.Since(start))
 		return nil, err
 	}
 	defer resp.Body.Close()
+	log.DebugContext(ctx, "fetch response received", "status", resp.StatusCode)
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, fmt.Errorf("fetch: upstream returned %s", resp.Status)
 	}
@@ -90,7 +104,9 @@ func (f *Fetcher) Get(ctx context.Context, rawURL string) ([]byte, error) {
 		return nil, err
 	}
 	if int64(len(body)) > f.maxBytes {
+		log.DebugContext(ctx, "fetch size limit exceeded", "max_bytes", f.maxBytes)
 		return nil, ErrTooLarge
 	}
+	log.DebugContext(ctx, "fetch completed", "bytes", len(body), "duration", time.Since(start))
 	return body, nil
 }

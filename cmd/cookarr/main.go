@@ -1,55 +1,26 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/hpalmer/cookarr/internal/api"
-	"github.com/hpalmer/cookarr/internal/auth"
 	"github.com/hpalmer/cookarr/internal/config"
 	"github.com/hpalmer/cookarr/internal/fetch"
 	"github.com/hpalmer/cookarr/internal/store"
-	"golang.org/x/term"
 )
 
 func main() {
-	cmd := "serve"
-	if len(os.Args) > 1 {
-		cmd = os.Args[1]
-	}
-	var err error
-	switch cmd {
-	case "serve":
-		err = serve()
-
-	case "reset-password":
-		// TODO: This should probably just be a callable script on the container...
-		err = resetPassword()
-
-	default:
-		fmt.Fprintf(os.Stderr, "usage: cookarr [serve|reset-password]\n")
-		os.Exit(2)
-	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+	if err := serve(); err != nil {
+		slog.Error("server failed", "err", err)
 		os.Exit(1)
 	}
-}
-
-func newLogger(cfg config.Config) *slog.Logger {
-	if cfg.LogJSON {
-		return slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	}
-	return slog.New(slog.NewTextHandler(os.Stderr, nil))
 }
 
 func serve() error {
@@ -57,12 +28,22 @@ func serve() error {
 	if err != nil {
 		return err
 	}
-	log := newLogger(cfg)
-	db, err := openStore(cfg)
+	log := cfg.Logger
+	slog.SetDefault(log)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	db, err := store.Open(ctx, cfg.DBDriver, cfg.DBPath, cfg.DatabaseURL)
+	cancel()
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Error("close database", "err", err)
+		}
+	}()
 
 	if cfg.AuthDisabled {
 		log.Warn("AUTH_DISABLED is set: every request is treated as the owner")
@@ -76,6 +57,7 @@ func serve() error {
 			AuthDisabled: cfg.AuthDisabled,
 			MaxBodyBytes: cfg.MaxBodyBytes,
 		}),
+		ErrorLog:          slog.NewLogLogger(log.Handler(), slog.LevelError),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       60 * time.Second,
 		IdleTimeout:       2 * time.Minute,
@@ -103,88 +85,6 @@ func serve() error {
 		return err
 	}
 
+	log.Info("shutdown complete")
 	return nil
-}
-
-// resetPassword sets a new owner password and revokes every session. It talks
-// to the database directly, so it only works where you have database access
-// (e.g. docker exec -it cookarr cookarr reset-password).
-func resetPassword() error {
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	db, err := openStore(cfg)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	ctx := context.Background()
-	if _, err := db.Owner(ctx); errors.Is(err, store.ErrNotFound) {
-		return errors.New("no owner yet; complete setup in the web UI first")
-	} else if err != nil {
-		return err
-	}
-	pw, err := readPassword()
-	if err != nil {
-		return err
-	}
-	if len(pw) < auth.MinPasswordLength {
-		return fmt.Errorf("password must be at least %d characters", auth.MinPasswordLength)
-	}
-	hash, err := auth.HashPassword(pw)
-	if err != nil {
-		return err
-	}
-	if err := db.SetPassword(ctx, hash); err != nil {
-		return err
-	}
-	fmt.Println("password updated; all sessions revoked")
-	return nil
-}
-
-func openStore(cfg config.Config) (store.Store, error) {
-	switch cfg.DBDriver {
-	case "sqlite":
-		return store.OpenSQLite(cfg.DBPath)
-
-	case "postgres":
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		return store.OpenPostgres(ctx, cfg.DatabaseURL)
-
-	default:
-		return nil, fmt.Errorf("unsupported database driver %q", cfg.DBDriver)
-	}
-}
-
-func readPassword() (string, error) {
-	fd := int(os.Stdin.Fd())
-	if !term.IsTerminal(fd) {
-		line, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil && line == "" {
-			return "", err
-		}
-		return strings.TrimRight(line, "\r\n"), nil
-	}
-	fmt.Fprint(os.Stderr, "New password: ")
-
-	a, err := term.ReadPassword(fd)
-	fmt.Fprintln(os.Stderr)
-	if err != nil {
-		return "", err
-	}
-
-	fmt.Fprint(os.Stderr, "Confirm password: ")
-	b, err := term.ReadPassword(fd)
-	fmt.Fprintln(os.Stderr)
-	if err != nil {
-		return "", err
-	}
-
-	if string(a) != string(b) {
-		return "", errors.New("passwords do not match")
-	}
-
-	return string(a), nil
 }

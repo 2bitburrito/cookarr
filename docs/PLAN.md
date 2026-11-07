@@ -96,7 +96,7 @@ One Go module at the root. The web app and extension are separate JS projects.
 
 ```
 cookarr/
-├── cmd/cookarr/          main.go with subcommands: serve, migrate, reset-password
+├── cmd/cookarr/          server entrypoint (password reset lives in scripts/reset-password.go)
 ├── internal/
 │   ├── api/              HTTP handlers, middleware, routing
 │   ├── auth/             login, sessions, extension tokens

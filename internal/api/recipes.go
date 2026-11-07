@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/hpalmer/cookarr/internal/capture"
 	"github.com/hpalmer/cookarr/internal/fetch"
@@ -20,6 +21,7 @@ type importRequest struct {
 }
 
 func (s *Server) importRecipe(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	var req importRequest
 	if !s.decodeJSON(w, r, &req) {
 		return
@@ -31,6 +33,7 @@ func (s *Server) importRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var page []byte
+	s.log.DebugContext(r.Context(), "import started", "host", u.Hostname(), "supplied_html", req.HTML != nil)
 	switch {
 	case req.HTML == nil:
 		page, err = s.cfg.Fetcher.Get(r.Context(), req.URL)
@@ -41,7 +44,7 @@ func (s *Server) importRecipe(w http.ResponseWriter, r *http.Request) {
 			case errors.Is(err, fetch.ErrBlocked):
 				writeError(w, http.StatusUnprocessableEntity, "blocked", "that address cannot be fetched")
 			default:
-				s.log.Warn("fetch failed", "url", req.URL, "err", err)
+				s.log.WarnContext(r.Context(), "fetch failed", "host", u.Hostname(), "err", err)
 				writeError(w, http.StatusBadGateway, "fetch_failed", "could not fetch the page")
 			}
 			return
@@ -58,9 +61,11 @@ func (s *Server) importRecipe(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid", "could not parse html")
 		return
 	}
-	rec, err := capture.Parse(req.URL, stripped, capture.Options{Extractor: capture.Extractor{}})
+	s.log.DebugContext(r.Context(), "import HTML stripped", "input_bytes", len(page), "stripped_bytes", len(stripped))
+	rec, err := capture.Parse(req.URL, stripped, capture.Options{Extractor: capture.Extractor{}, Logger: s.log})
 	if err != nil {
 		if hasRecipeErr(err) {
+			s.log.DebugContext(r.Context(), "import rejected: no recipe", "host", u.Hostname())
 			writeError(w, http.StatusUnprocessableEntity, "no_recipe", "no recipe found on that page")
 		} else {
 			s.internalError(w, "parse", err)
@@ -74,6 +79,7 @@ func (s *Server) importRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Location", fmt.Sprintf("/api/v1/recipes/%d", saved.ID))
+	s.log.InfoContext(r.Context(), "recipe imported", "recipe_id", saved.ID, "host", u.Hostname(), "extractor", rec.Extractor, "warnings", len(rec.Warnings), "dur", time.Since(start))
 	writeJSON(w, http.StatusCreated, saved)
 }
 
@@ -83,6 +89,7 @@ func (s *Server) getRecipe(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "recipe not found")
 		return
 	}
+	s.log.DebugContext(r.Context(), "loading recipe", "recipe_id", id)
 	rec, err := s.cfg.Store.GetRecipe(r.Context(), id)
 	switch {
 	case errors.Is(err, store.ErrNotFound):
@@ -118,6 +125,7 @@ func (s *Server) listRecipes(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, "list recipes", err)
 		return
 	}
+	s.log.DebugContext(r.Context(), "recipes listed", "limit", limit, "offset", offset, "count", len(items), "total", total)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"items": items, "total": total, "limit": limit, "offset": offset,
 	})
@@ -135,6 +143,7 @@ func (s *Server) deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.internalError(w, "delete recipe", err)
 	default:
+		s.log.InfoContext(r.Context(), "recipe deleted", "recipe_id", id)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
