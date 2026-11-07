@@ -1,0 +1,41 @@
+go.mod
+  s_91c7182dce24d0::t_126bf90451005f 25,27,40,42,45-49,51
+  s_91c7182dce24d0::t_aefdbd791f918f 11
+go.sum
+  s_91c7182dce24d0::t_8053e1837f26a7 18-21,24-25,28-29,48-51,64-65,71-74,81-90,96-97
+.env.example
+  s_91c7182dce24d0::t_0facf32ec1f851 3
+  s_91c7182dce24d0::t_a5a53843d70c03 1-2
+  s_412fc34f88d81d::t_208f2a1e323f16 4
+  s_412fc34f88d81d::t_8b88a6500965ea 5
+internal/config/config.go
+  s_91c7182dce24d0::t_a5a53843d70c03 30
+  s_91c7182dce24d0::t_f3b6ff5631b39f 1,8-9,13-17,19-22,26-29,31-46,58,61-62
+internal/config/config_test.go
+  s_91c7182dce24d0::t_a5a53843d70c03 82
+  s_91c7182dce24d0::t_246787219d3bfc 5-6,10-17,19,47,75-81,83-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2a3e45f0bb1b324b9af364d5765e4006638ded46",
+  "prompts": {},
+  "sessions": {
+    "s_412fc34f88d81d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e5ef653bfffe5i7JxOzbLWMZqE",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    },
+    "s_91c7182dce24d0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e49e65ea5ffePoC8Av9L6xYLiM",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": null
+    }
+  }
+}
