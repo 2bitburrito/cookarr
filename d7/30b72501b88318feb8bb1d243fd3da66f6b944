@@ -1,0 +1,66 @@
+internal/store/postgresdb/owner.sql.go
+  s_412fc34f88d81d::t_c049f9729de2d7 1-67
+db/queries/postgres/recipe.sql
+  s_412fc34f88d81d::t_12b170a137aa28 15
+  s_412fc34f88d81d::t_37d1610d2b9210 1-14,16-18
+internal/config/config_test.go
+  s_412fc34f88d81d::t_208f2a1e323f16 1-7,9-32
+  s_412fc34f88d81d::t_0323b3d3c33b2f 8
+.github/workflows/test.yml
+  s_412fc34f88d81d::t_208f2a1e323f16 1-33
+go.mod
+  s_412fc34f88d81d::t_96e2eb859ec778 29-30
+  s_412fc34f88d81d::t_0323b3d3c33b2f 8,31
+internal/config/config.go
+  s_412fc34f88d81d::t_12b170a137aa28 13-14,25-26,30-38
+internal/store/sqlite_test.go
+  s_412fc34f88d81d::t_208f2a1e323f16 15,31-34,95-98,123-126,159,169-176
+  s_412fc34f88d81d::t_0c2d42820a0cba 36-38,48-62,128-134,136,149,153-158
+  s_412fc34f88d81d::t_4e4fc8d7c6daef 135
+db/queries/postgres/owner.sql
+  s_412fc34f88d81d::t_37d1610d2b9210 1-12
+.env.example
+  s_412fc34f88d81d::t_208f2a1e323f16 1-12
+cmd/cookarr/main.go
+  s_412fc34f88d81d::t_12b170a137aa28 35,61,87,89,92,98,105,110,117,146-156,177
+  s_412fc34f88d81d::t_9098c8d2f55f0b 157-159
+internal/store/postgresdb/db.go
+  s_412fc34f88d81d::t_c049f9729de2d7 1-31
+internal/store/postgres_test.go
+  s_412fc34f88d81d::t_208f2a1e323f16 1-94
+db/sqlc.yaml
+  s_412fc34f88d81d::t_37d1610d2b9210 11-18
+internal/store/postgresdb/models.go
+  s_412fc34f88d81d::t_c049f9729de2d7 1-36
+internal/store/store.go
+  s_412fc34f88d81d::t_0c2d42820a0cba 1-2
+internal/store/postgresdb/session.sql.go
+  s_412fc34f88d81d::t_c049f9729de2d7 1-64
+db/queries/postgres/session.sql
+  s_412fc34f88d81d::t_37d1610d2b9210 1-14
+internal/store/postgresdb/recipe.sql.go
+  s_412fc34f88d81d::t_c049f9729de2d7 1-88,90-92,95-107,109-136
+  s_412fc34f88d81d::t_0323b3d3c33b2f 89,93-94,108
+internal/store/migrations/postgres/0001_init.sql
+  s_412fc34f88d81d::t_37d1610d2b9210 1-33
+internal/store/postgres.go
+  s_412fc34f88d81d::t_12b170a137aa28 1-204
+go.sum
+  s_412fc34f88d81d::t_5f49c2201c5ac3 15,32-39,52,63-65,88-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d730b72501b88318feb8bb1d243fd3da66f6b944",
+  "prompts": {},
+  "sessions": {
+    "s_412fc34f88d81d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e5ef653bfffe5i7JxOzbLWMZqE",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
