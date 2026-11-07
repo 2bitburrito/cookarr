@@ -14,7 +14,7 @@ Each phase ends with something runnable.
 - [x] Repo layout, config, structured logging
 - [x] Go Std lib restful api
 - [x] Owner login, sessions, extension tokens, `AUTH_DISABLED`, container-only password reset
-- [ ] goose + sqlc on SQLite and Postgres, with CI against both
+- [x] goose + sqlc on SQLite and Postgres, with CI against both
 - [ ] Capture pipeline: parse, sanitise, image fetch with SSRF guard, store, keep stripped HTML
 - [ ] URL-fetch path
 - [ ] Dockerfile (Node build stage) and compose example
