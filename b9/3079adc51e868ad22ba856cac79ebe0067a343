@@ -1,0 +1,28 @@
+go.mod
+  s_91c7182dce24d0::t_aefdbd791f918f 11
+  s_91c7182dce24d0::t_126bf90451005f 25,27,40,42,45-49,51
+.env.example
+  s_91c7182dce24d0::t_f3b6ff5631b39f 10-11
+internal/config/config.go
+  s_91c7182dce24d0::t_f3b6ff5631b39f 1,8-9,13-17,19-22,26-46,58,61-62
+internal/config/config_test.go
+  s_91c7182dce24d0::t_246787219d3bfc 5-6,10-17,19,47,75-140
+go.sum
+  s_91c7182dce24d0::t_8053e1837f26a7 18-21,24-25,28-29,48-51,64-65,71-74,81-90,96-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b93079adc51e868ad22ba856cac79ebe0067a343",
+  "prompts": {},
+  "sessions": {
+    "s_91c7182dce24d0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e49e65ea5ffePoC8Av9L6xYLiM",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
