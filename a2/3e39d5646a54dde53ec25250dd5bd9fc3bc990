@@ -1,0 +1,63 @@
+internal/store/store.go
+  s_45777902476922::t_8fa7e29e3ee93e 8-9,15-26
+  s_45777902476922::t_d789ed33c487ae 27
+internal/capture/capture.go
+  s_45777902476922::t_63a32305f24ed6 7,19-20,31-34,39-40,53,62,80,86
+scripts/reset-password_test.go
+  s_45777902476922::t_afe9c0310c17c5 1-15,17,21,23-68
+  s_45777902476922::t_e42460d446bc4e 16
+  s_45777902476922::t_08355cccfe498e 18-20
+  s_45777902476922::t_6049ed802655ab 22
+internal/config/config_test.go
+  s_45777902476922::t_d3355f7e587200 10-11
+  s_45777902476922::t_e5febbd25653bd 3-9,12-21,24-33
+  s_45777902476922::t_6b928f60083a31 22-23
+internal/fetch/fetch_test.go
+  s_45777902476922::t_afe9c0310c17c5 8,12-22
+  s_45777902476922::t_2b5e6c593917b3 23
+cmd/cookarr/main.go
+  s_45777902476922::t_8fa7e29e3ee93e 20-21,32-37,41-43
+  s_45777902476922::t_dcdf3b8a3e9d70 31
+  s_45777902476922::t_62d31b01d1da02 44-46
+internal/store/sqlite.go
+  s_45777902476922::t_b96cdae48d9406 11,67-68
+  s_45777902476922::t_e5febbd25653bd 63
+internal/store/postgres.go
+  s_45777902476922::t_b96cdae48d9406 11
+  s_45777902476922::t_e5febbd25653bd 58,62-63
+internal/api/recipes.go
+  s_45777902476922::t_c45da70c67f1e9 9,24,82,146
+  s_45777902476922::t_63a32305f24ed6 36,47,64-65,68,92,128
+docs/PLAN.md
+  s_45777902476922::t_e5febbd25653bd 99
+internal/api/auth.go
+  s_45777902476922::t_b96cdae48d9406 153,190
+  s_45777902476922::t_c45da70c67f1e9 81,93,117,127,139
+internal/config/config.go
+  s_45777902476922::t_dcdf3b8a3e9d70 21,61-66
+  s_45777902476922::t_8fa7e29e3ee93e 6,20,45
+  s_45777902476922::t_00750b4f12ecd2 43-44
+scripts/reset-password.go
+  s_45777902476922::t_dcdf3b8a3e9d70 33
+  s_45777902476922::t_8fa7e29e3ee93e 1-32,34-94
+internal/fetch/fetch.go
+  s_45777902476922::t_63a32305f24ed6 10,14,42,58-59,84-86,89-94,98,107,110
+internal/api/api.go
+  s_45777902476922::t_b96cdae48d9406 98,124-131,133,147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a23e39d5646a54dde53ec25250dd5bd9fc3bc990",
+  "prompts": {},
+  "sessions": {
+    "s_45777902476922": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e4a0e1b9effeWJl13UVX53fdyO",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
