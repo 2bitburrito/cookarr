@@ -257,10 +257,13 @@ func TestGooseDownAndUp(t *testing.T) {
 	}
 }
 
-// Run the identical contract against both backends. Each Postgres test gets a
-// random schema; no existing tables are touched. CI always sets this URL.
+// Run the identical contract against both backends. Each Postgres test gets an
+// isolated database through pgtestdb on the package's disposable test container.
 func forEachStore(t *testing.T, test func(*testing.T, Store)) {
 	t.Helper()
 	t.Run("sqlite", func(t *testing.T) { test(t, openTestStore(t)) })
-	t.Run("postgres", func(t *testing.T) { test(t, openTestPostgres(t)) })
+	t.Run("postgres", func(t *testing.T) {
+		t.Parallel()
+		test(t, openTestPostgres(t))
+	})
 }
