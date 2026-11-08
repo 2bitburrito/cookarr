@@ -94,7 +94,11 @@ func (f *Fetcher) Get(ctx context.Context, rawURL string) ([]byte, error) {
 		log.DebugContext(ctx, "fetch failed", "duration", time.Since(start))
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.WarnContext(ctx, "close fetch response", "err", err)
+		}
+	}()
 	log.DebugContext(ctx, "fetch response received", "status", resp.StatusCode)
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, fmt.Errorf("fetch: upstream returned %s", resp.Status)

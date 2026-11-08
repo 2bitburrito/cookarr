@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 
+	"github.com/hpalmer/cookarr/internal/types"
 	"golang.org/x/net/html"
 )
 
@@ -39,7 +40,7 @@ func dropElement(n *html.Node) bool {
 	switch n.Data {
 	case "style":
 		return true
-	case "script":
+	case types.HTMLScriptElement:
 		return !strings.Contains(strings.ToLower(attr(n, "type")), "ld+json")
 	}
 	return false

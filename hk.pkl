@@ -1,0 +1,33 @@
+amends "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Builtins.pkl"
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = preCommitSteps
+  }
+  ["pre-push"] {
+    steps = prePushSteps
+  }
+}
+
+local linter = new Step {
+  check = "mage lint"
+}
+
+local preCommitSteps = new Mapping<String, Step> {
+  ["golangci-lint"] = linter
+  ["unit-tests"] = new Step {
+    stomp = true
+    check = "mage test"
+  }
+}
+
+local prePushSteps = new Mapping<String, Step> {
+  ["golangci-lint"] = linter
+  ["all-tests"] = new Step {
+    stomp = true
+    check = "mage test"
+  }
+}

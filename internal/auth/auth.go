@@ -14,30 +14,24 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-// Argon2id parameters (RFC 9106 second recommendation: 64 MiB, 3 passes).
-// They are stored in each encoded hash, so they can be raised later without
-// invalidating existing passwords.
 const (
-	argonMemory  = 64 * 1024
-	argonTime    = 3
-	argonThreads = 2
-	argonKeyLen  = 32
-	argonSaltLen = 16
+	Argon2MemoryKiB  = 64 * 1024
+	Argon2Iterations = 3
+	Argon2Threads    = 2
+	Argon2KeyLength  = 32
+	Argon2SaltLength = 16
 )
-
-// MinPasswordLength is enforced when an owner is created or a password reset.
-const MinPasswordLength = 8
 
 // HashPassword returns a PHC-format Argon2id hash:
 // $argon2id$v=19$m=65536,t=3,p=2$<salt>$<key>
 func HashPassword(password string) (string, error) {
-	salt := make([]byte, argonSaltLen)
+	salt := make([]byte, Argon2SaltLength)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
 	}
-	key := argon2.IDKey([]byte(password), salt, argonTime, argonMemory, argonThreads, argonKeyLen)
+	key := argon2.IDKey([]byte(password), salt, Argon2Iterations, Argon2MemoryKiB, Argon2Threads, Argon2KeyLength)
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, argonMemory, argonTime, argonThreads,
+		argon2.Version, Argon2MemoryKiB, Argon2Iterations, Argon2Threads,
 		base64.RawStdEncoding.EncodeToString(salt),
 		base64.RawStdEncoding.EncodeToString(key)), nil
 }

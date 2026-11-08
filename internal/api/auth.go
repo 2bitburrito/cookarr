@@ -10,6 +10,7 @@ import (
 
 	"github.com/hpalmer/cookarr/internal/auth"
 	"github.com/hpalmer/cookarr/internal/store"
+	"github.com/hpalmer/cookarr/internal/types"
 )
 
 type credentials struct {
@@ -19,7 +20,13 @@ type credentials struct {
 
 // dummyHash is verified against when the username is wrong, so a bad username
 // and a bad password take the same time.
-var dummyHash, _ = auth.HashPassword("cookarr-dummy-password")
+var dummyHash = func() string {
+	hash, err := auth.HashPassword("cookarr-dummy-password")
+	if err != nil {
+		panic(fmt.Errorf("hash dummy password: %w", err))
+	}
+	return hash
+}()
 
 func (s *Server) setupStatus(w http.ResponseWriter, r *http.Request) {
 	required := false
@@ -50,12 +57,12 @@ func (s *Server) setup(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid", "username is required")
 		return
 	}
-	if len(c.Password) < auth.MinPasswordLength {
+	if len(c.Password) < types.MinPasswordLength {
 		writeError(
 			w,
 			http.StatusUnprocessableEntity,
 			"invalid",
-			fmt.Sprintf("password must be at least %d characters", auth.MinPasswordLength),
+			fmt.Sprintf("password must be at least %d characters", types.MinPasswordLength),
 		)
 		return
 	}
@@ -112,7 +119,11 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		hash = owner.PasswordHash
 	}
 
-	ok, _ := auth.VerifyPassword(c.Password, hash)
+	ok, verifyErr := auth.VerifyPassword(c.Password, hash)
+	if verifyErr != nil {
+		s.internalError(w, "verify password", verifyErr)
+		return
+	}
 	if err != nil || !ok || c.Username != owner.Username {
 		s.log.WarnContext(r.Context(), "login rejected")
 		s.limiter.fail(ip)
@@ -129,7 +140,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
-	if c, err := r.Cookie(sessionCookie); err == nil {
+	if c, err := r.Cookie(types.SessionCookieName); err == nil {
 		if err := s.cfg.Store.DeleteSession(r.Context(), auth.HashToken(c.Value)); err != nil {
 			s.internalError(w, "delete session", err)
 			return
@@ -143,20 +154,20 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 func (s *Server) startSession(w http.ResponseWriter, r *http.Request) bool {
 	token, hash, err := auth.NewSessionToken()
 	if err == nil {
-		err = s.cfg.Store.CreateSession(r.Context(), hash, time.Now().Add(sessionTTL))
+		err = s.cfg.Store.CreateSession(r.Context(), hash, time.Now().Add(types.SessionTTL))
 	}
 	if err != nil {
 		s.internalError(w, "create session", err)
 		return false
 	}
-	http.SetCookie(w, s.cookie(token, r, int(sessionTTL.Seconds())))
-	s.log.DebugContext(r.Context(), "session created", "ttl", sessionTTL)
+	http.SetCookie(w, s.cookie(token, r, int(types.SessionTTL.Seconds())))
+	s.log.DebugContext(r.Context(), "session created", "ttl", types.SessionTTL)
 	return true
 }
 
 func (s *Server) cookie(value string, r *http.Request, maxAge int) *http.Cookie {
 	return &http.Cookie{
-		Name:     sessionCookie,
+		Name:     types.SessionCookieName,
 		Value:    value,
 		Path:     "/",
 		MaxAge:   maxAge,
@@ -174,7 +185,7 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			next(w, r)
 			return
 		}
-		c, err := r.Cookie(sessionCookie)
+		c, err := r.Cookie(types.SessionCookieName)
 		if err == nil {
 			var ok bool
 			ok, err = s.cfg.Store.SessionValid(r.Context(), auth.HashToken(c.Value))

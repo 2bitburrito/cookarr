@@ -40,12 +40,14 @@ type corpusEntry struct {
 
 // loadCorpus is used only by tests and the test benchmark. It pairs each TSV
 // source with its downloaded fixture, skipping fixtures that aren't present.
-func loadCorpus(sourcesTSV, fixturesDir string) ([]corpusEntry, error) {
+func loadCorpus(sourcesTSV, fixturesDir string) (entries []corpusEntry, err error) {
 	f, err := os.Open(sourcesTSV)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		err = errors.Join(err, f.Close())
+	}()
 
 	var out []corpusEntry
 	sc := bufio.NewScanner(f)
@@ -163,7 +165,7 @@ func TestParseBench(t *testing.T) {
 
 	var output bytes.Buffer
 	w := tabwriter.NewWriter(&output, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "FIXTURE\tTITLE\tINGREDIENTS\tSTEPS\tSTORY\tPHOTOS\tAUTHOR\tLINKS\tMS\tRESULT")
+	benchPrintf(t, w, "FIXTURE\tTITLE\tINGREDIENTS\tSTEPS\tSTORY\tPHOTOS\tAUTHOR\tLINKS\tMS\tRESULT\n")
 	var totals benchSummary
 	for _, e := range entries {
 		raw, err := os.ReadFile(e.path)
@@ -183,20 +185,20 @@ func TestParseBench(t *testing.T) {
 		}
 		totals.add(rec, result)
 		if rec == nil {
-			fmt.Fprintf(w, "%s\t-\t-\t-\t-\t-\t-\t-\t%d\t%s\n", e.slug, elapsed.Milliseconds(), result)
+			benchPrintf(t, w, "%s\t-\t-\t-\t-\t-\t-\t-\t%d\t%s\n", e.slug, elapsed.Milliseconds(), result)
 			continue
 		}
 		links := 0
 		if rec.Author != nil {
 			links = len(rec.Author.Links)
 		}
-		fmt.Fprintf(w, "%s\t%s\t%d\t%d\t%s\t%d\t%s\t%d\t%d\t%s\n",
+		benchPrintf(t, w, "%s\t%s\t%d\t%d\t%s\t%d\t%s\t%d\t%d\t%s\n",
 			e.slug, mark(rec.Title != ""), len(rec.Ingredients), len(rec.Steps),
 			storySize(rec.StoryHTML), len(rec.Photos), authorName(rec), links,
 			elapsed.Milliseconds(), result)
 		if *verbose {
 			for _, warning := range rec.Warnings {
-				fmt.Fprintf(w, "  warn\t%s\n", warning)
+				benchPrintf(t, w, "  warn\t%s\n", warning)
 			}
 		}
 		if *outDir != "" {
@@ -235,7 +237,7 @@ func runComparison(t *testing.T, sources, fixtures, outDir string, verbose bool)
 	ours := capture.Options{Extractor: capture.Extractor{}}
 	var output bytes.Buffer
 	w := tabwriter.NewWriter(&output, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "FIXTURE\tKRIP ING\tKRIP STEPS\tOURS ING\tOURS STEPS\tCOUNT MATCH\tKRIP MS\tOURS MS")
+	benchPrintf(t, w, "FIXTURE\tKRIP ING\tKRIP STEPS\tOURS ING\tOURS STEPS\tCOUNT MATCH\tKRIP MS\tOURS MS\n")
 	var kripSummary, oursSummary benchSummary
 	countMatches, countDiffs := 0, 0
 	for _, e := range entries {
@@ -260,14 +262,14 @@ func runComparison(t *testing.T, sources, fixtures, outDir string, verbose bool)
 		} else {
 			countDiffs++
 		}
-		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\t%s\t%d\t%d\n", e.slug, ki, ks, oi, os,
+		benchPrintf(t, w, "%s\t%d\t%d\t%d\t%d\t%s\t%d\t%d\n", e.slug, ki, ks, oi, os,
 			mark(match), kTime.Milliseconds(), oTime.Milliseconds())
 		if verbose && (!match || len(warnings(kr)) > 0 || len(warnings(or)) > 0) {
 			for _, warning := range warnings(kr) {
-				fmt.Fprintf(w, "  krip warn\t%s\n", warning)
+				benchPrintf(t, w, "  krip warn\t%s\n", warning)
 			}
 			for _, warning := range warnings(or) {
-				fmt.Fprintf(w, "  ours warn\t%s\n", warning)
+				benchPrintf(t, w, "  ours warn\t%s\n", warning)
 			}
 		}
 		if outDir != "" {
@@ -283,6 +285,13 @@ func runComparison(t *testing.T, sources, fixtures, outDir string, verbose bool)
 	kripSummary.print("krip baseline")
 	oursSummary.print("Cookarr")
 	fmt.Printf("  Cookarr vs krip recipe coverage: %+d\n", oursSummary.recipes-kripSummary.recipes)
+}
+
+func benchPrintf(t *testing.T, w io.Writer, format string, args ...any) {
+	t.Helper()
+	if _, err := fmt.Fprintf(w, format, args...); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func resultLabel(err error) string {

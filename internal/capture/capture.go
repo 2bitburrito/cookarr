@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/hpalmer/cookarr/internal/authors"
+	"github.com/hpalmer/cookarr/internal/types"
 	"golang.org/x/net/html"
 )
 
@@ -44,7 +45,10 @@ func Parse(pageURL string, page []byte, opts Options) (*Recipe, error) {
 	}
 
 	rec := &Recipe{SourceURL: pageURL, Extractor: ex.Name()}
-	base, _ := url.Parse(pageURL)
+	base, err := url.Parse(pageURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse page URL: %w", err)
+	}
 
 	var structErr error
 	st, err := safeExtract(ex, pageURL, stripped)
@@ -115,9 +119,9 @@ func applyStructured(rec *Recipe, st *Structured, base *url.URL) {
 	rec.Source = st.Source
 
 	for i, img := range st.Images {
-		role := PhotoStep
+		role := types.PhotoStep
 		if i == 0 {
-			role = PhotoHero
+			role = types.PhotoHero
 		}
 		img.URL = absURL(base, img.URL)
 		img.Role = role
@@ -144,9 +148,9 @@ func addStoryPhotos(rec *Recipe, urls []string) {
 			continue
 		}
 		seen[u] = true
-		role := PhotoStory
+		role := types.PhotoStory
 		if i == 0 && len(rec.Photos) == 0 {
-			role = PhotoHero
+			role = types.PhotoHero
 		}
 		rec.Photos = append(rec.Photos, Photo{URL: u, Role: role})
 	}

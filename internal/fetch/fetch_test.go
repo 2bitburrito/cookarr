@@ -23,7 +23,9 @@ func TestFetchErrorOmitsURLSecrets(t *testing.T) {
 
 func TestBlocksLoopback(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hi"))
+		if _, err := w.Write([]byte("hi")); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer srv.Close()
 
@@ -47,7 +49,9 @@ func TestBlocksRedirectToLoopback(t *testing.T) {
 
 func TestTooLarge(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(make([]byte, 100))
+		if _, err := w.Write(make([]byte, 100)); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer srv.Close()
 	if _, err := New(10, true).Get(context.Background(), srv.URL); !errors.Is(err, ErrTooLarge) {

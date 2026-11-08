@@ -87,7 +87,7 @@ func TestDefaults(t *testing.T) {
 func TestDotEnv(t *testing.T) {
 	isolateConfig(t)
 	contents := "ADDR=:9090\nDB=custom.db\nDB_DRIVER=postgres\nDATABASE_URL=postgres://localhost/cookarr\nAUTH_DISABLED=\"true\"\nLOG_JSON=1\nLOG_LEVEL=debug\nMAX_BODY_BYTES=1024\n"
-	if err := os.WriteFile(".env", []byte(contents), 0600); err != nil {
+	if err := os.WriteFile(".env", []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	c, err := Load()
@@ -131,7 +131,7 @@ func TestInvalidSettings(t *testing.T) {
 
 func TestInvalidDotEnv(t *testing.T) {
 	isolateConfig(t)
-	if err := os.WriteFile(".env", []byte("AUTH_DISABLED=\"unterminated\n"), 0600); err != nil {
+	if err := os.WriteFile(".env", []byte("AUTH_DISABLED=\"unterminated\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Load(); err == nil {

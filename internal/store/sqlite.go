@@ -15,6 +15,7 @@ import (
 
 	"github.com/hpalmer/cookarr/internal/capture"
 	"github.com/hpalmer/cookarr/internal/store/sqlitedb"
+	"github.com/hpalmer/cookarr/internal/types"
 	"github.com/pressly/goose/v3"
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -49,8 +50,7 @@ func OpenSQLite(path string) (*SQLite, error) {
 	db.SetMaxOpenConns(1)
 	s := &SQLite{db: db, queries: sqlitedb.New(db)}
 	if err := s.migrate(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("migrate: %w", err)
+		return nil, errors.Join(fmt.Errorf("migrate: %w", err), db.Close())
 	}
 	return s, nil
 }
@@ -73,9 +73,12 @@ func (s *SQLite) Close() error { return s.db.Close() }
 
 func ts(t time.Time) string { return t.UTC().Format(time.RFC3339Nano) }
 
-func parseTS(v string) time.Time {
-	t, _ := time.Parse(time.RFC3339Nano, v)
-	return t
+func parseTS(v string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339Nano, v)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse stored timestamp: %w", err)
+	}
+	return t, nil
 }
 
 func (s *SQLite) OwnerExists(ctx context.Context) (bool, error) {
@@ -99,15 +102,26 @@ func (s *SQLite) Owner(ctx context.Context) (Owner, error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		return Owner{}, ErrNotFound
 	}
-	return Owner{Username: row.Username, PasswordHash: row.PasswordHash, CreatedAt: parseTS(row.CreatedAt)}, err
+	if err != nil {
+		return Owner{}, err
+	}
+	createdAt, err := parseTS(row.CreatedAt)
+	if err != nil {
+		return Owner{}, err
+	}
+	return Owner{Username: row.Username, PasswordHash: row.PasswordHash, CreatedAt: createdAt}, nil
 }
 
-func (s *SQLite) SetPassword(ctx context.Context, passwordHash string) error {
+func (s *SQLite) SetPassword(ctx context.Context, passwordHash string) (err error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
+			err = errors.Join(err, fmt.Errorf("rollback password reset: %w", rollbackErr))
+		}
+	}()
 	q := s.queries.WithTx(tx)
 	n, err := q.SetPassword(ctx, passwordHash)
 	if err != nil {
@@ -141,7 +155,11 @@ func (s *SQLite) SessionValid(ctx context.Context, tokenHash string) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	return parseTS(expires).After(time.Now()), nil
+	expiresAt, err := parseTS(expires)
+	if err != nil {
+		return false, err
+	}
+	return expiresAt.After(time.Now()), nil
 }
 
 func (s *SQLite) DeleteSession(ctx context.Context, tokenHash string) error {
@@ -155,7 +173,7 @@ func (s *SQLite) CreateRecipe(ctx context.Context, r *capture.Recipe, strippedHT
 	}
 	hero := ""
 	for _, p := range r.Photos {
-		if p.Role == capture.PhotoHero {
+		if p.Role == types.PhotoHero {
 			hero = p.URL
 			break
 		}
@@ -180,7 +198,11 @@ func (s *SQLite) GetRecipe(ctx context.Context, id int64) (Recipe, error) {
 	if err != nil {
 		return Recipe{}, err
 	}
-	rec := Recipe{ID: id, CapturedAt: parseTS(row.CapturedAt)}
+	capturedAt, err := parseTS(row.CapturedAt)
+	if err != nil {
+		return Recipe{}, err
+	}
+	rec := Recipe{ID: id, CapturedAt: capturedAt}
 	if err := json.Unmarshal([]byte(row.Data), &rec.Recipe); err != nil {
 		return Recipe{}, fmt.Errorf("decode recipe %d: %w", id, err)
 	}
@@ -198,10 +220,14 @@ func (s *SQLite) ListRecipes(ctx context.Context, limit, offset int) ([]Summary,
 	}
 	items := make([]Summary, 0, len(rows))
 	for _, row := range rows {
+		capturedAt, err := parseTS(row.CapturedAt)
+		if err != nil {
+			return nil, 0, err
+		}
 		items = append(items, Summary{
 			ID: row.ID, Title: row.Title, Description: row.Description,
 			SourceURL: row.SourceUrl, SiteName: row.SiteName, HeroURL: row.HeroUrl,
-			CapturedAt: parseTS(row.CapturedAt),
+			CapturedAt: capturedAt,
 		})
 	}
 	return items, int(total), nil

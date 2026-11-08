@@ -1,0 +1,63 @@
+version: "2"
+run:
+  tests: false
+linters:
+  default: none
+  enable:
+    - cyclop
+    - errcheck
+    - errname
+    - funlen
+    - goconst
+    - govet
+    - ineffassign
+    - interfacebloat
+    - misspell
+    - noctx
+    - revive
+    - staticcheck
+    - unused
+  settings:
+    cyclop:
+      max-complexity: 20
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    funlen:
+      lines: 100
+      statements: 80
+      ignore-comments: true
+    revive:
+      severity: error
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - cyclop
+          - goconst
+          - noctx
+          - unused
+        path: _test.go
+      - linters:
+          - cyclop
+          - errcheck
+          - goconst
+          - noctx
+          - unused
+        path: example_test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  fix: false
+formatters:
+  enable:
+    - gci
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

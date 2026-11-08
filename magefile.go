@@ -3,6 +3,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -21,16 +23,34 @@ func Fixtures() error {
 // Parsebench runs the capture test harness over the fixture corpus.
 // Set PARSEBENCH_FLAGS to pass harness flags, e.g. PARSEBENCH_FLAGS="-extractor ours -v" mage parsebench.
 func Parsebench() error {
-	cmd := exec.Command("go", "test", "-v", "-run", "^TestParseBench$", "./internal/capture")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), "PARSEBENCH_FLAGS="+strings.Join(strings.Fields(os.Getenv("PARSEBENCH_FLAGS")), " "))
-	return cmd.Run()
+	return runVerbose("go", "test", "-v", "-run", "^TestParseBench$", "./internal/capture")
+}
+
+func Test() error {
+	return run("go", "test", "./...", "--race")
+}
+
+func TestVerbose() error {
+	return runVerbose("go", "test", "./...", "-v", "--race")
+}
+
+func Lint() error {
+	return runVerbose("golangci-lint", "run")
 }
 
 func run(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
+	cmd := exec.CommandContext(context.Background(), name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// runVerbose is a helper function to run a command with all outs and errs printed.
+func runVerbose(name string, args ...string) error {
+	fmt.Printf("%s %s\n", name, strings.Join(args, " "))
+	cmd := exec.CommandContext(context.Background(), name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 	return cmd.Run()
 }

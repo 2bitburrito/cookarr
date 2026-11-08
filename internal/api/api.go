@@ -15,11 +15,6 @@ import (
 	"github.com/hpalmer/cookarr/internal/store"
 )
 
-const (
-	sessionCookie = "cookarr_session"
-	sessionTTL    = 30 * 24 * time.Hour
-)
-
 // Pager fetches pages for URL imports.
 type Pager interface {
 	Get(ctx context.Context, rawURL string) ([]byte, error)
@@ -86,7 +81,9 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		slog.Error("write JSON response", "err", err)
+	}
 }
 
 // decodeJSON reads a size-limited JSON body. It writes the error response and

@@ -1,6 +1,10 @@
 package capture
 
-import "time"
+import (
+	"time"
+
+	"github.com/hpalmer/cookarr/internal/types"
+)
 
 // Recipe is what the capture pipeline produces. Each field group maps to a
 // workspace panel: ingredients, steps, story, photos, author.
@@ -42,13 +46,7 @@ type Step struct {
 	Text  string `json:"text"`
 }
 
-type PhotoRole string
-
-const (
-	PhotoHero  PhotoRole = "hero"
-	PhotoStep  PhotoRole = "step"
-	PhotoStory PhotoRole = "story"
-)
+type PhotoRole = types.PhotoRole
 
 type Photo struct {
 	URL     string    `json:"url"`
@@ -58,13 +56,7 @@ type Photo struct {
 	Height  int       `json:"height,omitempty"`
 }
 
-type LinkKind string
-
-const (
-	LinkSocial  LinkKind = "social"
-	LinkSupport LinkKind = "support"
-	LinkOther   LinkKind = "other"
-)
+type LinkKind = types.AuthorLinkKind
 
 type Link struct {
 	URL  string   `json:"url"`

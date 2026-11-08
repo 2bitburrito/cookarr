@@ -42,7 +42,10 @@ func extractStory(page []byte, pageURL string) (*story, error) {
 	}
 	removeRecipeCards(root)
 
-	u, _ := url.Parse(pageURL)
+	u, err := url.Parse(pageURL)
+	if err != nil {
+		return nil, err
+	}
 	parser := readability.NewParser()
 	art, err := parser.ParseDocument(root, u)
 	if err != nil {

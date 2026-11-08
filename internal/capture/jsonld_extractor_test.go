@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/hpalmer/cookarr/internal/types"
 )
 
 func TestExtractorReadsRecipeFromJSONLDGraph(t *testing.T) {
@@ -250,9 +252,9 @@ func TestExtractedTextIsDecodedAndStripped(t *testing.T) {
 
 func TestSourceReportsWhereFieldsCameFrom(t *testing.T) {
 	tests := []struct{ name, page, want string }{
-		{"jsonld", `<script type="application/ld+json">{"@type":"Recipe","name":"X","recipeIngredient":["1 egg"],"recipeInstructions":["Boil."]}</script>`, SourceJSONLD},
-		{"jsonld plus headings", `<script type="application/ld+json">{"@type":"Recipe","name":"X"}</script><h2>Ingredients</h2><ul><li>1 egg</li></ul><h2>Method</h2><ol><li>Boil.</li></ol>`, SourceJSONLDHeadings},
-		{"headings only", `<h2>Ingredients</h2><ul><li>1 egg</li></ul><h2>Method</h2><ol><li>Boil.</li></ol>`, SourceHeadings},
+		{"jsonld", `<script type="application/ld+json">{"@type":"Recipe","name":"X","recipeIngredient":["1 egg"],"recipeInstructions":["Boil."]}</script>`, types.SourceJSONLD},
+		{"jsonld plus headings", `<script type="application/ld+json">{"@type":"Recipe","name":"X"}</script><h2>Ingredients</h2><ul><li>1 egg</li></ul><h2>Method</h2><ol><li>Boil.</li></ol>`, types.SourceJSONLDHeadings},
+		{"headings only", `<h2>Ingredients</h2><ul><li>1 egg</li></ul><h2>Method</h2><ol><li>Boil.</li></ol>`, types.SourceHeadings},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

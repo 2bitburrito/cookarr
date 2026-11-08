@@ -9,9 +9,21 @@ import (
 	"time"
 
 	"github.com/hpalmer/cookarr/internal/capture"
+	"github.com/hpalmer/cookarr/internal/types"
 )
 
 var markup = regexp.MustCompile(`</?[a-zA-Z][^>]*>|&(amp|lt|gt|quot|#\d+);`)
+
+func TestParseRejectsMalformedPageURL(t *testing.T) {
+	for _, pageURL := range []string{"https://example.com/%zz", "https://[invalid"} {
+		t.Run(pageURL, func(t *testing.T) {
+			rec, err := capture.Parse(pageURL, []byte("<html></html>"), capture.Options{})
+			if err == nil || rec != nil {
+				t.Fatalf("expected URL parse error and no recipe, got recipe=%+v err=%v", rec, err)
+			}
+		})
+	}
+}
 
 func parseFixture(t *testing.T, slug, pageURL string) *capture.Recipe {
 	t.Helper()
@@ -42,7 +54,7 @@ func TestParseFixtures(t *testing.T) {
 		source      string
 	}{
 		{
-			slug: "allrecipes", source: capture.SourceJSONLD, url: "https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/",
+			slug: "allrecipes", source: types.SourceJSONLD, url: "https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/",
 			title: "Best Chocolate Chip Cookies", yield: "4 dozen cookies", author: "Dora",
 			ingredients: 11, steps: 9,
 			// A comma inside an ingredient must survive intact.
@@ -50,26 +62,26 @@ func TestParseFixtures(t *testing.T) {
 			firstStep: "Gather your ingredients, making sure your butter is softened, and your eggs are room temperature.",
 		},
 		{
-			slug: "seriouseats", source: capture.SourceJSONLD, url: "https://www.seriouseats.com/blistered-tomato-pasta-salad-recipe-11980610",
+			slug: "seriouseats", source: types.SourceJSONLD, url: "https://www.seriouseats.com/blistered-tomato-pasta-salad-recipe-11980610",
 			title: "Blistered-Tomato Pasta Salad With Basil", yield: "8", author: "Daniel Gritzer",
 			ingredients: 7, steps: 3,
 			firstIng: "1 pound dried pasta, sich as fusilli bucati or regular fusilli",
 		},
 		{
-			slug: "jamieoliver", source: capture.SourceJSONLD, url: "https://www.jamieoliver.com/recipes/pasta-recipes/gennaro-s-classic-spaghetti-carbonara/",
+			slug: "jamieoliver", source: types.SourceJSONLD, url: "https://www.jamieoliver.com/recipes/pasta-recipes/gennaro-s-classic-spaghetti-carbonara/",
 			title: "Gennaro's classic spaghetti carbonara", yield: "2", author: "Gennaro Contaldo",
 			ingredients: 6, steps: 8,
 			firstIng:  "3 large free-range egg yolks",
 			firstStep: "Put the egg yolks into a bowl, finely grate in the Parmesan, season with pepper, then mix well with a fork and put to one side.",
 		},
 		{
-			slug: "simplyrecipes", source: capture.SourceJSONLD, url: "https://www.simplyrecipes.com/recipes/perfect_guacamole/",
+			slug: "simplyrecipes", source: types.SourceJSONLD, url: "https://www.simplyrecipes.com/recipes/perfect_guacamole/",
 			title: "How to Make the Best Guacamole", yield: "4", author: "Elise Bauer",
 			ingredients: 10, steps: 5,
 			firstIng: "2 ripe avocados",
 		},
 		{
-			slug: "pinchofyum", source: capture.SourceJSONLD, url: "https://pinchofyum.com/the-best-soft-chocolate-chip-cookies",
+			slug: "pinchofyum", source: types.SourceJSONLD, url: "https://pinchofyum.com/the-best-soft-chocolate-chip-cookies",
 			title: "The Best Soft Chocolate Chip Cookies", yield: "12 cookies", author: "Lindsay Ostrom",
 			ingredients: 9, steps: 5,
 			firstIng: "8 tablespoons of salted butter",
@@ -77,7 +89,7 @@ func TestParseFixtures(t *testing.T) {
 		{
 			// No Recipe JSON-LD title: ingredients and steps come from the
 			// heading fallback.
-			slug: "nigella", source: capture.SourceHeadings, url: "https://www.nigella.com/recipes/coffee-shortbreads",
+			slug: "nigella", source: types.SourceHeadings, url: "https://www.nigella.com/recipes/coffee-shortbreads",
 			ingredients: 12, steps: 7,
 			firstIng:  "60 grams golden (or regular) caster sugar",
 			firstStep: "Heat the oven to 160°C/140°C Fan/325°F, and line 2 flat baking sheets with baking parchment.",

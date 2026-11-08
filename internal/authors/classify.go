@@ -6,14 +6,11 @@ package authors
 import (
 	"net/url"
 	"strings"
+
+	"github.com/hpalmer/cookarr/internal/types"
 )
 
-type Kind string
-
-const (
-	Social  Kind = "social"
-	Support Kind = "support"
-)
+type Kind = types.AuthorLinkKind
 
 var social = map[string]string{
 	"instagram.com": "instagram",
@@ -54,7 +51,7 @@ func Classify(raw string) (kind Kind, label string, ok bool) {
 
 	for prefix, l := range support {
 		if hostPath == prefix || strings.HasPrefix(hostPath, prefix+"/") || hostMatches(host, prefix) {
-			return Support, l, true
+			return types.AuthorLinkSupport, l, true
 		}
 	}
 	for d, l := range social {
@@ -62,7 +59,7 @@ func Classify(raw string) (kind Kind, label string, ok bool) {
 			if isShareLink(u) {
 				return "", "", false
 			}
-			return Social, l, true
+			return types.AuthorLinkSocial, l, true
 		}
 	}
 	return "", "", false

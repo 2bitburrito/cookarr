@@ -31,26 +31,45 @@ func newClient(t *testing.T, authDisabled bool, page []byte) *client {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	srv := httptest.NewServer(api.New(api.Config{
-		Store: db, Fetcher: stubFetcher{page}, AuthDisabled: authDisabled, MaxBodyBytes: 4 << 20,
+		Store:   db,
+		Fetcher: stubFetcher{page}, AuthDisabled: authDisabled, MaxBodyBytes: 4 << 20,
 	}))
 	t.Cleanup(srv.Close)
-	jar, _ := cookiejar.New(nil)
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return &client{t: t, http: &http.Client{Jar: jar}, base: srv.URL}
 }
 
 func (c *client) do(method, path, body string) (int, map[string]any) {
 	c.t.Helper()
-	req, _ := http.NewRequest(method, c.base+path, strings.NewReader(body))
+	req, err := http.NewRequestWithContext(c.t.Context(), method, c.base+path, strings.NewReader(body))
+	if err != nil {
+		c.t.Fatal(err)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.http.Do(req)
 	if err != nil {
 		c.t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			c.t.Error(err)
+		}
+	}()
 	var out map[string]any
-	json.NewDecoder(resp.Body).Decode(&out)
+	if resp.StatusCode != http.StatusNoContent {
+		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+			c.t.Fatal(err)
+		}
+	}
 	return resp.StatusCode, out
 }
 
@@ -136,7 +155,10 @@ func TestRecipes(t *testing.T) {
 		t.Fatalf("unexpected recipe: %v", first)
 	}
 
-	htmlJSON, _ := json.Marshal(string(page))
+	htmlJSON, err := json.Marshal(string(page))
+	if err != nil {
+		t.Fatal(err)
+	}
 	code, second := c.do("POST", "/api/v1/recipes/import", `{`+u+`,"html":`+string(htmlJSON)+`}`)
 	expect(t, code, 201, "import html")
 	if first["id"] == second["id"] {
@@ -145,11 +167,17 @@ func TestRecipes(t *testing.T) {
 
 	code, list := c.do("GET", "/api/v1/recipes?limit=1", "")
 	expect(t, code, 200, "list")
-	if list["total"].(float64) != 2 || len(list["items"].([]any)) != 1 {
+	total, totalOK := list["total"].(float64)
+	items, itemsOK := list["items"].([]any)
+	if !totalOK || !itemsOK || total != 2 || len(items) != 1 {
 		t.Fatalf("unexpected list: %v", list)
 	}
 
-	path := fmt.Sprintf("/api/v1/recipes/%d", int(first["id"].(float64)))
+	id, ok := first["id"].(float64)
+	if !ok {
+		t.Fatalf("unexpected recipe ID: %v", first["id"])
+	}
+	path := fmt.Sprintf("/api/v1/recipes/%d", int(id))
 	code, got := c.do("GET", path, "")
 	expect(t, code, 200, "get")
 	if got["title"] != first["title"] {
@@ -163,12 +191,17 @@ func TestRecipes(t *testing.T) {
 
 func TestCrossOriginRejected(t *testing.T) {
 	c := newClient(t, true, nil)
-	req, _ := http.NewRequest("POST", c.base+"/api/v1/recipes/import", strings.NewReader(`{}`))
+	req, err := http.NewRequestWithContext(t.Context(), "POST", c.base+"/api/v1/recipes/import", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
 	req.Header.Set("Origin", "https://evil.example")
 	resp, err := c.http.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
 	expect(t, resp.StatusCode, 403, "cross-origin")
 }

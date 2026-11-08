@@ -54,6 +54,13 @@ type Summary struct {
 	CapturedAt  time.Time `json:"captured_at"`
 }
 
+// Store is the backend-neutral persistence contract shared by SQLite and Postgres.
+// The methods form one cohesive application boundary: owner setup, sessions,
+// and recipe persistence are consumed together by the server and tested together
+// against each backend. Keep this combined interface rather than splitting it
+// solely to meet an arbitrary method-count threshold.
+//
+//nolint:interfacebloat // Deliberately cohesive cross-backend persistence contract.
 type Store interface {
 	OwnerExists(ctx context.Context) (bool, error)
 	// CreateOwner returns ErrOwnerExists if an owner is already set.

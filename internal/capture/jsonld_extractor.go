@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/hpalmer/cookarr/internal/types"
 	"golang.org/x/net/html"
 )
 
@@ -55,7 +56,7 @@ func jsonLDStage(root *html.Node, result *Structured) *Structured {
 	var recipes []map[string]any
 	walk(root, func(n *html.Node) {
 		if n.Type != html.ElementNode ||
-			n.Data != "script" ||
+			n.Data != types.HTMLScriptElement ||
 			!strings.Contains(strings.ToLower(attr(n, "type")), "ld+json") {
 			return
 		}
@@ -77,7 +78,7 @@ func jsonLDStage(root *html.Node, result *Structured) *Structured {
 	if best == nil {
 		return result
 	}
-	best.Source = SourceJSONLD
+	best.Source = types.SourceJSONLD
 	return best
 }
 
@@ -99,10 +100,10 @@ func headingsStage(root *html.Node, result *Structured) *Structured {
 		filled = true
 	}
 	if filled {
-		if result.Source == SourceJSONLD {
-			result.Source = SourceJSONLDHeadings
+		if result.Source == types.SourceJSONLD {
+			result.Source = types.SourceJSONLDHeadings
 		} else {
-			result.Source = SourceHeadings
+			result.Source = types.SourceHeadings
 		}
 	}
 	return result
@@ -155,16 +156,16 @@ func extractHeadingSections(root *html.Node) headingSections {
 			}
 		}
 		contentNodes := nodes[i+1 : end]
-		if kind == "steps" && isNumberedStepHeading(text(n)) {
+		if kind == types.RecipeSectionSteps && isNumberedStepHeading(text(n)) {
 			if localNodes := followingSiblingNodes(n); len(localNodes) > 0 {
 				contentNodes = localNodes
 			}
 		}
 		for _, block := range sectionBlocks(contentNodes) {
 			switch kind {
-			case "ingredients":
+			case types.RecipeSectionIngredients:
 				appendUniqueIngredient(&result.ingredients, block.text)
-			case "steps":
+			case types.RecipeSectionSteps:
 				appendUniqueStep(&result.steps, block.text)
 			}
 		}
@@ -183,16 +184,16 @@ func classifyHeading(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
 	value = strings.Trim(value, " \t\r\n:.-–—")
 	if strings.HasPrefix(value, "step ") {
-		return "steps"
+		return types.RecipeSectionSteps
 	}
-	for _, keyword := range []string{"ingredients", "ingredient", "ingredient list", "what you need", "what you'll need", "what you will need"} {
+	for _, keyword := range []string{types.RecipeSectionIngredients, "ingredient", "ingredient list", "what you need", "what you'll need", "what you will need"} {
 		if value == keyword || strings.HasPrefix(value, keyword+" ") || strings.HasPrefix(value, keyword+":") {
-			return "ingredients"
+			return types.RecipeSectionIngredients
 		}
 	}
-	for _, keyword := range []string{"method", "steps", "directions", "instructions", "preparation", "how to make"} {
+	for _, keyword := range []string{"method", types.RecipeSectionSteps, "directions", "instructions", "preparation", "how to make"} {
 		if value == keyword || strings.HasPrefix(value, keyword+" ") || strings.HasPrefix(value, keyword+":") {
-			return "steps"
+			return types.RecipeSectionSteps
 		}
 	}
 	return ""
@@ -338,7 +339,7 @@ func cleanBlockText(n *html.Node, skipLists bool) string {
 	var collect func(*html.Node)
 	collect = func(node *html.Node) {
 		if node.Type == html.ElementNode {
-			if node.Data == "script" || node.Data == "style" || (skipLists && (node.Data == "ul" || node.Data == "ol")) {
+			if node.Data == types.HTMLScriptElement || node.Data == "style" || (skipLists && (node.Data == "ul" || node.Data == "ol")) {
 				return
 			}
 		}
@@ -585,8 +586,10 @@ func stringValue(v any) string {
 	return ""
 }
 
-var htmlTag = regexp.MustCompile(`</?[a-zA-Z][^>]*>`)
-var htmlBreak = regexp.MustCompile(`(?i)<br\s*/?>|</p>|</li>|</div>`)
+var (
+	htmlTag   = regexp.MustCompile(`</?[a-zA-Z][^>]*>`)
+	htmlBreak = regexp.MustCompile(`(?i)<br\s*/?>|</p>|</li>|</div>`)
+)
 
 // cleanText decodes HTML entities, strips markup and collapses whitespace.
 // JSON-LD strings frequently carry escaped entities (&amp;, &#39;) and

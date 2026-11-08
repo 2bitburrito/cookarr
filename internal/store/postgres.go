@@ -13,6 +13,7 @@ import (
 
 	"github.com/hpalmer/cookarr/internal/capture"
 	"github.com/hpalmer/cookarr/internal/store/postgresdb"
+	"github.com/hpalmer/cookarr/internal/types"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -40,12 +41,10 @@ func OpenPostgres(ctx context.Context, dsn string) (*Postgres, error) {
 	db.SetConnMaxLifetime(30 * time.Minute)
 	s := &Postgres{db: db, queries: postgresdb.New(db)}
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("connect postgres: %w", err)
+		return nil, errors.Join(fmt.Errorf("connect postgres: %w", err), db.Close())
 	}
 	if err := s.migrate(ctx); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("migrate postgres: %w", err)
+		return nil, errors.Join(fmt.Errorf("migrate postgres: %w", err), db.Close())
 	}
 	return s, nil
 }
@@ -90,12 +89,16 @@ func (s *Postgres) Owner(ctx context.Context) (Owner, error) {
 	return Owner{Username: row.Username, PasswordHash: row.PasswordHash, CreatedAt: row.CreatedAt.UTC()}, err
 }
 
-func (s *Postgres) SetPassword(ctx context.Context, passwordHash string) error {
+func (s *Postgres) SetPassword(ctx context.Context, passwordHash string) (err error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
+			err = errors.Join(err, fmt.Errorf("rollback password reset: %w", rollbackErr))
+		}
+	}()
 	q := s.queries.WithTx(tx)
 	n, err := q.SetPassword(ctx, passwordHash)
 	if err != nil {
@@ -142,7 +145,7 @@ func (s *Postgres) CreateRecipe(ctx context.Context, r *capture.Recipe, stripped
 	}
 	hero := ""
 	for _, p := range r.Photos {
-		if p.Role == capture.PhotoHero {
+		if p.Role == types.PhotoHero {
 			hero = p.URL
 			break
 		}

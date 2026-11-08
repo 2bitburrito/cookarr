@@ -14,6 +14,7 @@ import (
 	"github.com/hpalmer/cookarr/internal/capture"
 	"github.com/hpalmer/cookarr/internal/store/postgresdb"
 	"github.com/hpalmer/cookarr/internal/store/sqlitedb"
+	"github.com/hpalmer/cookarr/internal/types"
 	"github.com/pressly/goose/v3"
 )
 
@@ -23,7 +24,11 @@ func openTestStore(t *testing.T) *SQLite {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { s.Close() })
+	t.Cleanup(func() {
+		if err := s.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	return s
 }
 
@@ -132,7 +137,7 @@ func testRecipeQueries(t *testing.T, s Store) {
 	r := &capture.Recipe{
 		Title: "Soup", Description: "A soup", SourceURL: "https://example.com/soup", SiteName: "Recipes",
 		Ingredients: []capture.Ingredient{{Text: "water"}},
-		Photos:      []capture.Photo{{URL: "https://example.com/photo.jpg", Role: capture.PhotoHero}},
+		Photos:      []capture.Photo{{URL: "https://example.com/photo.jpg", Role: types.PhotoHero}},
 	}
 	first, err := s.CreateRecipe(ctx, r, []byte("<html></html>"))
 	if err != nil {
@@ -186,7 +191,11 @@ func TestLegacyMigrationAndReopen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	body, err := sqliteMigrations.ReadFile("migrations/sqlite/0001_init.sql")
 	if err != nil {
 		t.Fatal(err)
@@ -208,7 +217,9 @@ func TestLegacyMigrationAndReopen(t *testing.T) {
 	if err := q.CreateSession(ctx, sqlitedb.CreateSessionParams{TokenHash: "saved-token", CreatedAt: ts(time.Now()), ExpiresAt: ts(time.Now().Add(time.Hour))}); err != nil {
 		t.Fatal(err)
 	}
-	id, err := q.CreateRecipe(ctx, sqlitedb.CreateRecipeParams{Title: "Saved", Data: `{"title":"Saved"}`, StrippedHtml: []byte("source")})
+	id, err := q.CreateRecipe(ctx, sqlitedb.CreateRecipeParams{
+		Title: "Saved", Data: `{"title":"Saved"}`, StrippedHtml: []byte("source"), CapturedAt: ts(time.Now()),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +242,45 @@ func TestLegacyMigrationAndReopen(t *testing.T) {
 		if err != nil || r.Title != "Saved" {
 			t.Fatalf("lost recipe: %+v %v", r, err)
 		}
-		s.Close()
+		if err := s.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestSQLiteRejectsInvalidStoredTimestamps(t *testing.T) {
+	s := openTestStore(t)
+	ctx := t.Context()
+	if err := s.CreateOwner(ctx, "owner", "hash"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CreateSession(ctx, "token", time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	rec, err := s.CreateRecipe(ctx, &capture.Recipe{Title: "Soup"}, []byte("source"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, query := range []string{
+		"UPDATE owner SET created_at = 'invalid'",
+		"UPDATE session SET expires_at = 'invalid'",
+		"UPDATE recipe SET captured_at = 'invalid'",
+	} {
+		if _, err := s.db.ExecContext(ctx, query); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := s.Owner(ctx); err == nil {
+		t.Error("Owner accepted an invalid timestamp")
+	}
+	if _, err := s.SessionValid(ctx, "token"); err == nil {
+		t.Error("SessionValid accepted an invalid timestamp")
+	}
+	if _, err := s.GetRecipe(ctx, rec.ID); err == nil {
+		t.Error("GetRecipe accepted an invalid timestamp")
+	}
+	if _, _, err := s.ListRecipes(ctx, 50, 0); err == nil {
+		t.Error("ListRecipes accepted an invalid timestamp")
 	}
 }
 

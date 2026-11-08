@@ -12,13 +12,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-// Where the structured fields came from.
-const (
-	SourceJSONLD         = "jsonld"
-	SourceHeadings       = "headings"
-	SourceJSONLDHeadings = "jsonld+headings"
-)
-
 // Structured is the common shape of what a structured-data extractor (JSON-LD,
 // microdata, OpenGraph) can tell us about a page. Extractors are swappable so
 // the harness can compare them on the same fixtures.

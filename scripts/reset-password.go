@@ -15,6 +15,7 @@ import (
 	"github.com/hpalmer/cookarr/internal/auth"
 	"github.com/hpalmer/cookarr/internal/config"
 	"github.com/hpalmer/cookarr/internal/store"
+	"github.com/hpalmer/cookarr/internal/types"
 	"golang.org/x/term"
 )
 
@@ -52,8 +53,8 @@ func resetPassword() error {
 	if err != nil {
 		return err
 	}
-	if len(pw) < auth.MinPasswordLength {
-		return fmt.Errorf("password must be at least %d characters", auth.MinPasswordLength)
+	if len(pw) < types.MinPasswordLength {
+		return fmt.Errorf("password must be at least %d characters", types.MinPasswordLength)
 	}
 	hash, err := auth.HashPassword(pw)
 	if err != nil {

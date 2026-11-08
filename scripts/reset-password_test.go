@@ -26,7 +26,11 @@ func TestResetPasswordRevokesSessions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	ctx := context.Background()
 	hash, err := auth.HashPassword("old-password")
 	if err != nil {
@@ -42,7 +46,11 @@ func TestResetPasswordRevokesSessions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer input.Close()
+	defer func() {
+		if err := input.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	if _, err := input.WriteString("new-password\n"); err != nil {
 		t.Fatal(err)
 	}

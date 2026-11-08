@@ -10,7 +10,9 @@ func TestPasswordRoundTrip(t *testing.T) {
 	if ok, err := VerifyPassword("correct horse battery", h); err != nil || !ok {
 		t.Fatalf("expected match, got ok=%v err=%v", ok, err)
 	}
-	if ok, _ := VerifyPassword("wrong", h); ok {
+	if ok, err := VerifyPassword("wrong", h); err != nil {
+		t.Fatal(err)
+	} else if ok {
 		t.Fatal("wrong password matched")
 	}
 	if _, err := VerifyPassword("x", "garbage"); err == nil {
