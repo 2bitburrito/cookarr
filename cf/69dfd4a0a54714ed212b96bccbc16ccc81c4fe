@@ -1,0 +1,35 @@
+internal/store/postgres_test.go
+  s_559c616eb36c7a::t_4b4f84c38f90f3 11-12,68,81-83,87-88,92-93,114
+  s_559c616eb36c7a::t_bf6d2b05f64ea6 14-15,18-51,53-55,57,59-60,62-67,69-74,76-80,84,99-111
+  s_559c616eb36c7a::t_1a458db896cebc 112
+.github/workflows/pr.yml
+  s_559c616eb36c7a::t_bf6d2b05f64ea6 17
+.env.example
+  s_559c616eb36c7a::t_bf6d2b05f64ea6 15-16
+go.mod
+  s_559c616eb36c7a::t_1a50f654844cb8 23-25,31-40,42-43,45-47,57-59,64-72,74-75,77,81-82,88,90-98
+  s_559c616eb36c7a::t_8619837f32a144 10-11
+  s_559c616eb36c7a::t_78dfb8f2e04c4c 14-15
+internal/store/sqlite_test.go
+  s_559c616eb36c7a::t_4b4f84c38f90f3 265-268
+  s_559c616eb36c7a::t_f485e5dee4105b 260
+  s_559c616eb36c7a::t_bf6d2b05f64ea6 261
+go.sum
+  s_559c616eb36c7a::t_ef6bfc4aa03113 3-10,23-38,40-45,48-51,56-63,70-71,90-91,96-101,104-105,114-135,138-141,144-149,151-152,157-158,165-168,182-183,190-215,222-223,230-232,243-244,273-274
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cf69dfd4a0a54714ed212b96bccbc16ccc81c4fe",
+  "prompts": {},
+  "sessions": {
+    "s_559c616eb36c7a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e453bba07ffe1GGMSz1u4xyN8l",
+        "model": "openai/gpt-6.1-sol"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
