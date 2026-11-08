@@ -9,11 +9,25 @@ import (
 	"time"
 )
 
+type LayoutPreset struct {
+	ID          int64
+	Name        string
+	DeviceClass string
+	LayoutJson  json.RawMessage
+	UpdatedAt   time.Time
+}
+
 type Owner struct {
 	ID           int16
 	Username     string
 	PasswordHash string
 	CreatedAt    time.Time
+}
+
+type Pref struct {
+	Key       string
+	Value     json.RawMessage
+	UpdatedAt time.Time
 }
 
 type Recipe struct {
@@ -26,6 +40,13 @@ type Recipe struct {
 	Data         json.RawMessage
 	StrippedHtml []byte
 	CapturedAt   time.Time
+}
+
+type RecipeLayout struct {
+	RecipeID    int64
+	DeviceClass string
+	LayoutJson  json.RawMessage
+	UpdatedAt   time.Time
 }
 
 type Session struct {

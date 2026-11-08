@@ -1,6 +1,6 @@
 import type { DockviewApi } from 'dockview-core/dist/dockview-core.js'
 
-export type PresetName = 'classic' | 'cook' | 'read'
+export type PresetName = 'classic' | 'cook' | 'read' | 'phone'
 
 type Title = (id: string) => string
 
@@ -35,6 +35,19 @@ export const presets: Record<PresetName, (api: DockviewApi, title: Title) => voi
     panel(api, title, 'steps', { referencePanel: 'photos', direction: 'below' })
     api.addFloatingGroup(ing, { position: { right: 40, top: 70 }, width: 320, height: 380 })
     story.api.setActive()
+  },
+  // One panel at a time (tabbed) for narrow screens, per docs/PLAN.md open
+  // question #3: ingredients must stay reachable even on a phone, so they're
+  // pinned as a floating overlay rather than another tab to swipe past.
+  phone(api, title) {
+    const steps = panel(api, title, 'steps')
+    panel(api, title, 'story', { referencePanel: steps, direction: 'within' })
+    panel(api, title, 'photos', { referencePanel: steps, direction: 'within' })
+    panel(api, title, 'author', { referencePanel: steps, direction: 'within' })
+    const ing = panel(api, title, 'ingredients', { referencePanel: steps, direction: 'within' })
+    const width = Math.max(260, Math.min(420, window.innerWidth - 24))
+    api.addFloatingGroup(ing, { position: { left: 12, bottom: 12 }, width, height: 180 })
+    steps.api.setActive()
   },
 }
 

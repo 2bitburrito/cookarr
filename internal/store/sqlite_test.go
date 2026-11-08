@@ -3,9 +3,11 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -315,4 +317,106 @@ func forEachStore(t *testing.T, test func(*testing.T, Store)) {
 		t.Parallel()
 		test(t, openTestPostgres(t))
 	})
+}
+
+func TestLayoutQueries(t *testing.T) {
+	forEachStore(t, testLayoutQueries)
+}
+
+// layoutEqual compares stored layout JSON structurally: Postgres JSONB
+// reformats on write (e.g. adds a space after ':'), so byte-for-byte
+// comparison would fail on that backend even when the data round-trips
+// correctly.
+func layoutEqual(t *testing.T, got, want string) bool {
+	t.Helper()
+	var g, w any
+	if err := json.Unmarshal([]byte(got), &g); err != nil {
+		t.Fatalf("got is not JSON: %q: %v", got, err)
+	}
+	if err := json.Unmarshal([]byte(want), &w); err != nil {
+		t.Fatalf("want is not JSON: %q: %v", want, err)
+	}
+	return reflect.DeepEqual(g, w)
+}
+
+func testLayoutQueries(t *testing.T, s Store) {
+	ctx := context.Background()
+
+	if _, err := s.GetLayoutPreset(ctx, "classic", "desktop"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing preset: %v", err)
+	}
+	if err := s.SaveLayoutPreset(ctx, "classic", "desktop", `{"grid":"a"}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SaveLayoutPreset(ctx, "cook", "desktop", `{"grid":"b"}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SaveLayoutPreset(ctx, "classic", "phone", `{"grid":"c"}`); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.GetLayoutPreset(ctx, "classic", "desktop")
+	if err != nil || !layoutEqual(t, got.Layout, `{"grid":"a"}`) {
+		t.Fatalf("get preset: %+v %v", got, err)
+	}
+
+	list, err := s.ListLayoutPresets(ctx, "desktop")
+	if err != nil || len(list) != 2 {
+		t.Fatalf("list presets: %+v %v", list, err)
+	}
+
+	// Overwrite is an upsert, not a duplicate.
+	if err := s.SaveLayoutPreset(ctx, "classic", "desktop", `{"grid":"updated"}`); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.GetLayoutPreset(ctx, "classic", "desktop")
+	if err != nil || !layoutEqual(t, got.Layout, `{"grid":"updated"}`) {
+		t.Fatalf("preset not updated: %+v %v", got, err)
+	}
+
+	if err := s.DeleteLayoutPreset(ctx, "classic", "desktop"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteLayoutPreset(ctx, "classic", "desktop"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing delete: %v", err)
+	}
+
+	rec, err := s.CreateRecipe(ctx, &capture.Recipe{Title: "Soup"}, []byte("source"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetRecipeLayout(ctx, rec.ID, "desktop"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing override: %v", err)
+	}
+	if err := s.SaveRecipeLayout(ctx, rec.ID, "desktop", `{"grid":"override"}`); err != nil {
+		t.Fatal(err)
+	}
+	override, err := s.GetRecipeLayout(ctx, rec.ID, "desktop")
+	if err != nil || !layoutEqual(t, override, `{"grid":"override"}`) {
+		t.Fatalf("get override: %q %v", override, err)
+	}
+	if err := s.DeleteRecipeLayout(ctx, rec.ID, "desktop"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteRecipeLayout(ctx, rec.ID, "desktop"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing override delete: %v", err)
+	}
+
+	if _, err := s.GetPref(ctx, "active_preset:desktop"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing pref: %v", err)
+	}
+	if err := s.SetPref(ctx, "active_preset:desktop", `"cook"`); err != nil {
+		t.Fatal(err)
+	}
+	value, err := s.GetPref(ctx, "active_preset:desktop")
+	if err != nil || value != `"cook"` {
+		t.Fatalf("get pref: %q %v", value, err)
+	}
+	if err := s.SetPref(ctx, "active_preset:desktop", `"classic"`); err != nil {
+		t.Fatal(err)
+	}
+	value, err = s.GetPref(ctx, "active_preset:desktop")
+	if err != nil || value != `"classic"` {
+		t.Fatalf("pref not updated: %q %v", value, err)
+	}
 }

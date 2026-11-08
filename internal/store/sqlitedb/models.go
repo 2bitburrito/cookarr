@@ -4,11 +4,25 @@
 
 package sqlitedb
 
+type LayoutPreset struct {
+	ID          int64
+	Name        string
+	DeviceClass string
+	LayoutJson  string
+	UpdatedAt   string
+}
+
 type Owner struct {
 	ID           int64
 	Username     string
 	PasswordHash string
 	CreatedAt    string
+}
+
+type Pref struct {
+	Key       string
+	Value     string
+	UpdatedAt string
 }
 
 type Recipe struct {
@@ -21,6 +35,13 @@ type Recipe struct {
 	Data         string
 	StrippedHtml []byte
 	CapturedAt   string
+}
+
+type RecipeLayout struct {
+	RecipeID    int64
+	DeviceClass string
+	LayoutJson  string
+	UpdatedAt   string
 }
 
 type Session struct {

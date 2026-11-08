@@ -54,6 +54,15 @@ func New(cfg Config) http.Handler {
 	mux.Handle("GET /api/v1/recipes/{id}", s.requireAuth(s.getRecipe))
 	mux.Handle("DELETE /api/v1/recipes/{id}", s.requireAuth(s.deleteRecipe))
 
+	mux.Handle("GET /api/v1/layout/presets", s.requireAuth(s.listLayoutPresets))
+	mux.Handle("PUT /api/v1/layout/presets/{name}", s.requireAuth(s.saveLayoutPreset))
+	mux.Handle("DELETE /api/v1/layout/presets/{name}", s.requireAuth(s.deleteLayoutPreset))
+	mux.Handle("GET /api/v1/layout/active", s.requireAuth(s.getActivePreset))
+	mux.Handle("PUT /api/v1/layout/active", s.requireAuth(s.setActivePreset))
+	mux.Handle("GET /api/v1/recipes/{id}/layout", s.requireAuth(s.getRecipeLayout))
+	mux.Handle("PUT /api/v1/recipes/{id}/layout", s.requireAuth(s.saveRecipeLayout))
+	mux.Handle("DELETE /api/v1/recipes/{id}/layout", s.requireAuth(s.deleteRecipeLayout))
+
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
 	})

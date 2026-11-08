@@ -22,11 +22,11 @@ Each phase ends with something runnable.
 
 ## Phase 3: Tiling workspace, the main feature
 
-- [ ] Panel types and data endpoints
-- [ ] Dockview workspace: tabs, splits, float, popout
-- [ ] Layout save and restore, built-in presets, preset manager, per-recipe override, per-device-class layouts
-- [ ] Keyboard shortcuts, status bar
-- [ ] Ensure a cohesive experience for phone/tablet
+- [x] Panel types and data endpoints
+- [x] Dockview workspace: tabs, splits, float, popout
+- [x] Layout save and restore, built-in presets, preset manager, per-recipe override, per-device-class layouts
+- [x] Keyboard shortcuts, status bar
+- [x] Ensure a cohesive experience for phone/tablet
 - Exit: arrange a recipe your way and it stays that way.
 
 ## Phase 3: Extension

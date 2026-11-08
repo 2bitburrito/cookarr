@@ -243,3 +243,93 @@ func (s *SQLite) DeleteRecipe(ctx context.Context, id int64) error {
 	}
 	return nil
 }
+
+func (s *SQLite) ListLayoutPresets(ctx context.Context, deviceClass string) ([]LayoutPreset, error) {
+	rows, err := s.queries.ListLayoutPresets(ctx, deviceClass)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]LayoutPreset, 0, len(rows))
+	for _, row := range rows {
+		updatedAt, err := parseTS(row.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, LayoutPreset{
+			Name: row.Name, DeviceClass: row.DeviceClass, Layout: row.LayoutJson, UpdatedAt: updatedAt,
+		})
+	}
+	return out, nil
+}
+
+func (s *SQLite) GetLayoutPreset(ctx context.Context, name, deviceClass string) (LayoutPreset, error) {
+	row, err := s.queries.GetLayoutPreset(ctx, sqlitedb.GetLayoutPresetParams{Name: name, DeviceClass: deviceClass})
+	if errors.Is(err, sql.ErrNoRows) {
+		return LayoutPreset{}, ErrNotFound
+	}
+	if err != nil {
+		return LayoutPreset{}, err
+	}
+	updatedAt, err := parseTS(row.UpdatedAt)
+	if err != nil {
+		return LayoutPreset{}, err
+	}
+	return LayoutPreset{Name: row.Name, DeviceClass: row.DeviceClass, Layout: row.LayoutJson, UpdatedAt: updatedAt}, nil
+}
+
+func (s *SQLite) SaveLayoutPreset(ctx context.Context, name, deviceClass, layoutJSON string) error {
+	return s.queries.UpsertLayoutPreset(ctx, sqlitedb.UpsertLayoutPresetParams{
+		Name: name, DeviceClass: deviceClass, LayoutJson: layoutJSON, UpdatedAt: ts(time.Now()),
+	})
+}
+
+func (s *SQLite) DeleteLayoutPreset(ctx context.Context, name, deviceClass string) error {
+	n, err := s.queries.DeleteLayoutPreset(ctx, sqlitedb.DeleteLayoutPresetParams{Name: name, DeviceClass: deviceClass})
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *SQLite) GetRecipeLayout(ctx context.Context, recipeID int64, deviceClass string) (string, error) {
+	row, err := s.queries.GetRecipeLayout(ctx, sqlitedb.GetRecipeLayoutParams{RecipeID: recipeID, DeviceClass: deviceClass})
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", err
+	}
+	return row.LayoutJson, nil
+}
+
+func (s *SQLite) SaveRecipeLayout(ctx context.Context, recipeID int64, deviceClass, layoutJSON string) error {
+	return s.queries.UpsertRecipeLayout(ctx, sqlitedb.UpsertRecipeLayoutParams{
+		RecipeID: recipeID, DeviceClass: deviceClass, LayoutJson: layoutJSON, UpdatedAt: ts(time.Now()),
+	})
+}
+
+func (s *SQLite) DeleteRecipeLayout(ctx context.Context, recipeID int64, deviceClass string) error {
+	n, err := s.queries.DeleteRecipeLayout(ctx, sqlitedb.DeleteRecipeLayoutParams{RecipeID: recipeID, DeviceClass: deviceClass})
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *SQLite) GetPref(ctx context.Context, key string) (string, error) {
+	value, err := s.queries.GetPref(ctx, key)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return value, err
+}
+
+func (s *SQLite) SetPref(ctx context.Context, key, value string) error {
+	return s.queries.SetPref(ctx, sqlitedb.SetPrefParams{Key: key, Value: value, UpdatedAt: ts(time.Now())})
+}
