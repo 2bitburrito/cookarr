@@ -37,3 +37,24 @@ const (
 	AuthorLinkSupport AuthorLinkKind = "support"
 	AuthorLinkOther   AuthorLinkKind = "other"
 )
+
+// DeviceClass is the workspace layout bucket: desktop, tablet or phone.
+// Layouts (built-in presets, saved presets and per-recipe overrides) are
+// stored and resolved per class, per docs/PLAN.md.
+type DeviceClass string
+
+const (
+	DeviceDesktop DeviceClass = "desktop"
+	DeviceTablet  DeviceClass = "tablet"
+	DevicePhone   DeviceClass = "phone"
+)
+
+// ValidDeviceClass reports whether s is one of the known device classes.
+func ValidDeviceClass(s string) bool {
+	switch DeviceClass(s) {
+	case DeviceDesktop, DeviceTablet, DevicePhone:
+		return true
+	default:
+		return false
+	}
+}

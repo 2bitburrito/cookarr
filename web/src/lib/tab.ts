@@ -4,6 +4,8 @@ const FLOAT_ICON =
   '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="2.5" width="8" height="8" rx="2"/><path d="M3 5.5v5a2.5 2.5 0 0 0 2.5 2.5h5"/></svg>'
 const DOCK_ICON =
   '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/><path d="M2.5 6.5h11"/></svg>'
+const POPOUT_ICON =
+  '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h-2a1.5 1.5 0 0 0-1.5 1.5v8a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-2"/><path d="M8.5 2.5h5v5M13.2 2.8 8 8"/></svg>'
 const CLOSE_ICON =
   '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>'
 
@@ -48,6 +50,13 @@ export function createTab(getApi: () => DockviewApi | undefined): ITabRenderer {
         }
       })
       const close = button('tab-close', 'Close', () => api.close())
+      const popout = button('tab-popout', 'Pop out', () => {
+        const d = dv()
+        const panel = d?.getPanel(api.id)
+        if (!d || !panel) return
+        void d.addPopoutGroup(panel)
+      })
+      popout.innerHTML = POPOUT_ICON
 
       const syncFloat = () => {
         const floating = api.location.type === 'floating'
@@ -58,7 +67,7 @@ export function createTab(getApi: () => DockviewApi | undefined): ITabRenderer {
       close.innerHTML = CLOSE_ICON
       syncFloat()
 
-      element.replaceChildren(title, float, close)
+      element.replaceChildren(title, float, popout, close)
       subs.push(api.onDidTitleChange((e) => (title.textContent = e.title)))
       subs.push(api.onDidLocationChange(syncFloat))
     },
