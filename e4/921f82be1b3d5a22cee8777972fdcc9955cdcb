@@ -1,0 +1,29 @@
+hk.pkl
+  s_6fe4cf96a54604::t_8a968f9ad8f23d 23
+internal/capture/e2e_test.go
+  s_6fe4cf96a54604::t_2d566e38786aed 158-165
+  s_6fe4cf96a54604::t_1ba8b3530e1da7 8,166-167,169-190
+magefile.go
+  s_6fe4cf96a54604::t_41aeff8680e2d8 26
+  s_6fe4cf96a54604::t_ebe55b88f0e670 27-29
+internal/capture/capture_bench_test.go
+  s_6fe4cf96a54604::t_41aeff8680e2d8 108-109,111
+  s_6fe4cf96a54604::t_1ba8b3530e1da7 81
+  s_6fe4cf96a54604::t_04107169bd822b 117,224,292,323,338
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e4921f82be1b3d5a22cee8777972fdcc9955cdcb",
+  "prompts": {},
+  "sessions": {
+    "s_6fe4cf96a54604": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e44fd70dcffeYr2EBC3E8zW8oN",
+        "model": "anthropic/claude-sonnet-5-5"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
