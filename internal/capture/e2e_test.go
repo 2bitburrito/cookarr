@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -154,34 +155,39 @@ func TestParseCorpusInvariants(t *testing.T) {
 	if len(entries) == 0 {
 		t.Skip("no fixtures; run scripts/fetch-fixtures.sh")
 	}
-	parsed := 0
-	for _, e := range entries {
-		t.Run(e.slug, func(t *testing.T) {
-			page, err := os.ReadFile(e.path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			rec, err := capture.Parse(e.url, page, capture.Options{Extractor: capture.Extractor{}})
-			if err != nil {
-				if _, expected := noRecipe[e.slug]; !expected {
-					t.Logf("no recipe (not in noRecipe list): %v", err)
+	var parsed atomic.Int64
+	// The group makes the parent wait for the parallel subtests before the
+	// coverage check below.
+	t.Run("fixtures", func(t *testing.T) {
+		for _, e := range entries {
+			t.Run(e.slug, func(t *testing.T) {
+				t.Parallel()
+				page, err := os.ReadFile(e.path)
+				if err != nil {
+					t.Fatal(err)
 				}
-				return
-			}
-			parsed++
-			for i, ing := range rec.Ingredients {
-				checkLine(t, "ingredient", i, ing.Text)
-			}
-			for i, st := range rec.Steps {
-				checkLine(t, "step", i, st.Text)
-			}
-			if rec.Title != "" && markup.MatchString(rec.Title) {
-				t.Errorf("title has markup or entities: %q", rec.Title)
-			}
-		})
-	}
-	if parsed < len(entries)/2 {
-		t.Errorf("only %d of %d fixtures parsed; extractor regression?", parsed, len(entries))
+				rec, err := capture.Parse(e.url, page, capture.Options{Extractor: capture.Extractor{}})
+				if err != nil {
+					if _, expected := noRecipe[e.slug]; !expected {
+						t.Logf("no recipe (not in noRecipe list): %v", err)
+					}
+					return
+				}
+				parsed.Add(1)
+				for i, ing := range rec.Ingredients {
+					checkLine(t, "ingredient", i, ing.Text)
+				}
+				for i, st := range rec.Steps {
+					checkLine(t, "step", i, st.Text)
+				}
+				if rec.Title != "" && markup.MatchString(rec.Title) {
+					t.Errorf("title has markup or entities: %q", rec.Title)
+				}
+			})
+		}
+	})
+	if n := int(parsed.Load()); n < len(entries)/2 {
+		t.Errorf("only %d of %d fixtures parsed; extractor regression?", n, len(entries))
 	}
 }
 

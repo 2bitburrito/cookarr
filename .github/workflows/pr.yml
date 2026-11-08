@@ -1,6 +1,8 @@
 name: PR
 on:
   push:
+    branches: [main]
+
   pull_request:
 
 jobs:
@@ -11,8 +13,37 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 generate -f db/sqlc.yaml
+
+      - run: go install github.com/magefile/mage@latest
+
+      - run: mage Generate
+
       - run: git diff --exit-code -- internal/store/sqlitedb internal/store/postgresdb
-      - run: go vet ./...
-      # Store tests start and stop their own Postgres container using Docker.
-      - run: go test -race ./...
+
+      - run: mage TestVerbose
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.14.0
+
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go install github.com/magefile/mage@latest
+
+      - run: mage build
+
+      - run: mage BuildDocker

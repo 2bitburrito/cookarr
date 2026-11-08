@@ -20,7 +20,7 @@ local preCommitSteps = new Mapping<String, Step> {
   ["golangci-lint"] = linter
   ["unit-tests"] = new Step {
     stomp = true
-    check = "mage test"
+    check = "mage TestShort"
   }
 }
 

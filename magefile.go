@@ -23,7 +23,11 @@ func Fixtures() error {
 // Parsebench runs the capture test harness over the fixture corpus.
 // Set PARSEBENCH_FLAGS to pass harness flags, e.g. PARSEBENCH_FLAGS="-extractor ours -v" mage parsebench.
 func Parsebench() error {
-	return runVerbose("go", "test", "-v", "-run", "^TestParseBench$", "./internal/capture")
+	return runVerbose("go", "test", "-run", "^$", "-bench", "^BenchmarkParseBench$", "./internal/capture")
+}
+
+func TestShort() error {
+	return run("go", "test", "./...")
 }
 
 func Test() error {
@@ -36,6 +40,15 @@ func TestVerbose() error {
 
 func Lint() error {
 	return runVerbose("golangci-lint", "run")
+}
+
+func Build() error {
+	return runVerbose("go", "build", "./cmd/cookarr/")
+}
+
+func BuildDocker() error {
+	// TODO: Add this command when we have a dockerfile
+	return nil
 }
 
 func run(name string, args ...string) error {

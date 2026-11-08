@@ -78,6 +78,7 @@ func TestCorpus(t *testing.T) {
 
 	for _, e := range entries {
 		t.Run(e.slug, func(t *testing.T) {
+			t.Parallel()
 			raw, err := os.ReadFile(e.path)
 			if err != nil {
 				t.Fatal(err)
@@ -104,15 +105,16 @@ func TestCorpus(t *testing.T) {
 	}
 }
 
-// TestParseBench is an opt-in report harness. Run it with:
+// BenchmarkParseBench is a report harness that only runs with -bench. It does
+// one pass over the corpus regardless of b.N. Run it with:
 //
-//	go test -v -run '^TestParseBench$' ./internal/capture
+//	go test -run '^$' -bench '^BenchmarkParseBench$' ./internal/capture
 //	PARSEBENCH_FLAGS='-extractor ours -v' mage parsebench
 //
 // By default it compares Cookarr with krip, reporting per-fixture ingredient
 // and step counts and coverage summaries. Supported flags: -sources,
 // -fixtures, -extractor (compare|krip|ours), -out, -file, -url and -v.
-func TestParseBench(t *testing.T) {
+func BenchmarkParseBench(t *testing.B) {
 	log.SetOutput(io.Discard)
 	flags := flag.NewFlagSet("parsebench", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
@@ -219,7 +221,7 @@ func TestParseBench(t *testing.T) {
 	totals.print(ex.Name())
 }
 
-func runComparison(t *testing.T, sources, fixtures, outDir string, verbose bool) {
+func runComparison(t testing.TB, sources, fixtures, outDir string, verbose bool) {
 	t.Helper()
 	entries, err := loadCorpus(sources, fixtures)
 	if err != nil {
@@ -287,7 +289,7 @@ func runComparison(t *testing.T, sources, fixtures, outDir string, verbose bool)
 	fmt.Printf("  Cookarr vs krip recipe coverage: %+d\n", oursSummary.recipes-kripSummary.recipes)
 }
 
-func benchPrintf(t *testing.T, w io.Writer, format string, args ...any) {
+func benchPrintf(t testing.TB, w io.Writer, format string, args ...any) {
 	t.Helper()
 	if _, err := fmt.Fprintf(w, format, args...); err != nil {
 		t.Fatal(err)
@@ -318,7 +320,7 @@ func warnings(r *capture.Recipe) []string {
 	return r.Warnings
 }
 
-func writeBenchJSON(t *testing.T, path string, r *capture.Recipe) {
+func writeBenchJSON(t testing.TB, path string, r *capture.Recipe) {
 	t.Helper()
 	if r == nil {
 		return
@@ -333,7 +335,7 @@ func writeBenchJSON(t *testing.T, path string, r *capture.Recipe) {
 	}
 }
 
-func runSinglePage(t *testing.T, file, pageURL string, opts capture.Options) {
+func runSinglePage(t testing.TB, file, pageURL string, opts capture.Options) {
 	t.Helper()
 	var raw []byte
 	var err error
