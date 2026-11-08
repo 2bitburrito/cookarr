@@ -1,0 +1,79 @@
+internal/types/constants.go
+  s_559c616eb36c7a::t_4c9f44e223d825 20,22
+  s_559c616eb36c7a::t_cece3cd835d067 18-19,21
+  s_559c616eb36c7a::t_95305eac02ab67 1-17,23-39
+internal/capture/recipe.go
+  s_559c616eb36c7a::t_fb57d0f3dae6ad 3-7,49,59
+internal/store/store.go
+  s_559c616eb36c7a::t_6dbfba8de89c84 62
+  s_559c616eb36c7a::t_2b68583b0780d9 57-61,63
+scripts/reset-password.go
+  s_559c616eb36c7a::t_5423ef1dde24ae 18,56-57
+internal/capture/e2e_test.go
+  s_559c616eb36c7a::t_bed5baad489910 17-27
+  s_559c616eb36c7a::t_c4242de84c21e3 12,57,65,71,78,84,92
+internal/fetch/fetch_test.go
+  s_559c616eb36c7a::t_cd53e50007fc80 26-28,52-54
+internal/capture/capture.go
+  s_559c616eb36c7a::t_fb57d0f3dae6ad 12,122,124,151,153
+  s_559c616eb36c7a::t_2cfa175aa173fb 48-51
+internal/api/api.go
+  s_559c616eb36c7a::t_2cfa175aa173fb 84-86
+.gitignore
+  s_559c616eb36c7a::t_a4e12faf149b0e 31-32
+internal/fetch/fetch.go
+  s_559c616eb36c7a::t_2cfa175aa173fb 97-101
+internal/auth/auth_test.go
+  s_559c616eb36c7a::t_cd53e50007fc80 13-15
+internal/store/sqlite.go
+  s_559c616eb36c7a::t_c4242de84c21e3 18,176
+  s_559c616eb36c7a::t_2cfa175aa173fb 53,76-81,105-112,115,120-124,158-162,201-205,223-226,230
+internal/api/api_test.go
+  s_559c616eb36c7a::t_9f9ff6289847e4 41
+  s_559c616eb36c7a::t_cd53e50007fc80 34-38,44-47,53-56,62-66,68-72,158-161,170-172,176-180,194-197,203-205
+  s_559c616eb36c7a::t_6dbfba8de89c84 40
+internal/capture/strip.go
+  s_559c616eb36c7a::t_0cd835e6d9b20f 7,43
+internal/capture/jsonld_extractor.go
+  s_559c616eb36c7a::t_bf90dbcf57ac1a 13,81,103-104,106
+  s_559c616eb36c7a::t_0cd835e6d9b20f 59,159,166,168,187,189,191,194,196,342
+internal/capture/capture_bench_test.go
+  s_559c616eb36c7a::t_a47517948142b0 43,48-50,168,188,195,201,240,265,269,272,290-294
+  s_559c616eb36c7a::t_23ea0c54c6a0d9 295-296
+internal/store/postgres.go
+  s_559c616eb36c7a::t_2cfa175aa173fb 44,47,92,97-101
+  s_559c616eb36c7a::t_c4242de84c21e3 16,148
+internal/capture/story.go
+  s_559c616eb36c7a::t_2cfa175aa173fb 45-48
+internal/store/sqlite_test.go
+  s_559c616eb36c7a::t_bed5baad489910 247-248,251-283
+  s_559c616eb36c7a::t_276403f9ac5ca0 220-222
+  s_559c616eb36c7a::t_c4242de84c21e3 17,140
+  s_559c616eb36c7a::t_cd53e50007fc80 27-31,194-198,245-246
+  s_559c616eb36c7a::t_58eccb6496d11e 249-250
+internal/authors/classify.go
+  s_559c616eb36c7a::t_fb57d0f3dae6ad 10,13-14,54,62
+internal/api/auth.go
+  s_559c616eb36c7a::t_5423ef1dde24ae 13,60,65,143,157,163-164,170,188
+  s_559c616eb36c7a::t_2cfa175aa173fb 23-29,122-126
+internal/capture/jsonld_extractor_test.go
+  s_559c616eb36c7a::t_bf90dbcf57ac1a 8-9,255-257
+scripts/reset-password_test.go
+  s_559c616eb36c7a::t_cd53e50007fc80 29-33,49-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "401eead8d3c0b8e282252d3f1518d6d9f4ad82b4",
+  "prompts": {},
+  "sessions": {
+    "s_559c616eb36c7a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e453bba07ffe1GGMSz1u4xyN8l",
+        "model": "openai/gpt-6-luna"
+      },
+      "human_author": "Hugh Palmer <palmerhap@gmail.com>"
+    }
+  }
+}
