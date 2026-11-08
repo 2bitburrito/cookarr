@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/hpalmer/cookarr/internal/store"
@@ -24,11 +26,7 @@ func marshalLayout(w http.ResponseWriter, layout map[string]any) (string, error)
 	return string(raw), nil
 }
 
-var errEmptyLayout = errNotJSON("layout is required")
-
-type errNotJSON string
-
-func (e errNotJSON) Error() string { return string(e) }
+var errEmptyLayout = errors.New("layout is required")
 
 // writeRawLayout writes a stored layout blob back out, tagged with where it
 // was resolved from (override vs. saved preset) so the frontend can show
@@ -38,7 +36,9 @@ func writeRawLayout(w http.ResponseWriter, source, raw string) {
 	w.WriteHeader(http.StatusOK)
 	// raw is already valid JSON (the server only ever stores what it
 	// validated on the way in), so splice it in without re-decoding.
-	_, _ = w.Write([]byte(`{"source":"` + source + `","layout":` + raw + `}`))
+	if _, err := w.Write([]byte(`{"source":"` + source + `","layout":` + raw + `}`)); err != nil {
+		slog.Error("write layout response", "err", err)
+	}
 }
 
 func jsonMarshalString(s string) (string, error) {
